@@ -1,30 +1,30 @@
-# Debug da Lógica de Temperatura
+# Temperature Logic Debug
 
-Vamos analisar um caso específico:
+Let's analyze a specific case:
 
-## Configuração:
+## Configuration:
 - max_comfort_temp_val = 27°C
-- outdoor_temp = 30°C (exemplo)
+- outdoor_temp = 30°C (example)
 - comfort_category = "II" (±3°C)
-- indoor_temp = 29°C (muito quente)
+- indoor_temp = 29°C (too hot)
 
-## Cálculos:
+## Calculations:
 1. adaptive_comfort_temp = 18.9 + 0.255 × 30 = 26.55°C ≈ 26.6°C
 2. comfort_tolerance = 3.0°C
 3. comfort_temp_max = min(26.6 + 3.0, 27.0) = min(29.6, 27.0) = 27.0°C ✅
 
-## Problema Identificado:
-Na lógica target_temp original, quando indoor_temp > comfort_temp_max:
-- Modo ocupado: comfort_temp_max = 27°C ✅
-- Modo não ocupado: comfort_temp_max + setback = 27 + 2 = 29°C ❌
+## Problem Identified:
+In the original target_temp logic, when indoor_temp > comfort_temp_max:
+- Occupied mode: comfort_temp_max = 27°C ✅
+- Unoccupied mode: comfort_temp_max + setback = 27 + 2 = 29°C ❌
 
-O problema era que quando o ambiente não estava ocupado e estava muito quente, 
-a automação estava AUMENTANDO a temperatura em vez de manter o limite máximo.
+The problem was that when the environment was unoccupied and too hot, 
+the automation was INCREASING the temperature instead of maintaining the maximum limit.
 
-## Correção Implementada:
-A nova lógica para modo não ocupado:
-- Se indoor_temp > comfort_temp_max: usar comfort_temp_max (nunca exceder o limite)
-- Se indoor_temp < comfort_temp_min: usar comfort_temp_min - setback (com limite mínimo)
-- Senão: usar adaptive_comfort_temp
+## Implemented Fix:
+The new logic for unoccupied mode:
+- If indoor_temp > comfort_temp_max: use comfort_temp_max (never exceed the limit)
+- If indoor_temp < comfort_temp_min: use comfort_temp_min - setback (with minimum limit)
+- Otherwise: use adaptive_comfort_temp
 
-Agora NUNCA ultrapassará os limites de conforto configurados pelo usuário!
+Now it will NEVER exceed the comfort limits configured by the user!

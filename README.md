@@ -87,7 +87,7 @@ comfort_precision_mode: true                        # CBE tool accuracy
 
 📖 **Configuration Guides:**
 - **[Complete Setup Guide](docs/basic-vs-advanced-setup.md)** - Detailed configuration options
-- **[Weather Services Setup](examples/configuracao-servicos-meteorologicos.md)** - Using weather integrations (Portuguese)
+- **[Weather Services Setup](examples/weather-services-setup.md)** - Using weather integrations
 
 ### Additional Settings
 - **Comfort Category**: ASHRAE 55 categories (I, II, III)
