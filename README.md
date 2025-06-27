@@ -1,9 +1,10 @@
 # 🌡️ Smart Thermostat - Automatic Temperature Control
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmsinhore%2Fadaptive-climate-blueprint%2Fblob%2Fmain%2Fblueprints%2Fashrae55_adaptive_comfort_v2.yaml)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-blue.svg)](https://www.home-assistant.io/)
 [![Energy Savings](https://img.shields.io/badge/Energy%20Savings-15--30%25-green.svg)](https://github.com/msinhore/adaptive-climate-blueprint)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmsinhore%2Fadaptive-climate-blueprint%2Fblob%2Fmain%2Fblueprints%2Fashrae55_adaptive_comfort_v2.yaml)
 
 **Automatically adjusts your AC/heating based on outdoor weather to keep you comfortable while reducing energy bills.**
 
