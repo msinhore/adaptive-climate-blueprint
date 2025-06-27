@@ -211,7 +211,22 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: "/10"
+    minutes: 0
+    id: "scheduled_update"
+  - platform: time_pattern
+    minutes: 10
+    id: "scheduled_update"
+  - platform: time_pattern
+    minutes: 20
+    id: "scheduled_update"
+  - platform: time_pattern
+    minutes: 30
+    id: "scheduled_update"
+  - platform: time_pattern
+    minutes: 40
+    id: "scheduled_update"
+  - platform: time_pattern
+    minutes: 50
     id: "scheduled_update"
   
   - platform: state
