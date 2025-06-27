@@ -20,19 +20,22 @@ blueprint:
     
     indoor_temp_sensor:
       name: Indoor Temperature Sensor
-      description: Temperature sensor for the room being controlled
-      selector:
-        entity:
-          domain: sensor
-          device_class: temperature
-    
-    outdoor_temp_sensor:
-      name: Outdoor Temperature Sensor
-      description: External temperature sensor or weather service for adaptive comfort calculations
+      description: Temperature sensor, input number, or weather service for the room being controlled
       selector:
         entity:
           domain: 
             - sensor
+            - input_number
+            - weather
+    
+    outdoor_temp_sensor:
+      name: Outdoor Temperature Sensor
+      description: Temperature sensor, input number, or weather service for adaptive comfort calculations
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
             - weather
     
     occupancy_sensor:
@@ -126,30 +129,33 @@ blueprint:
     # Advanced Comfort Parameters (Optional)
     mean_radiant_temp_sensor:
       name: Mean Radiant Temperature Sensor (Optional)
-      description: Sensor for mean radiant temperature measurement (near windows, heated surfaces)
-      default: ""
-      selector:
-        entity:
-          domain: sensor
-          device_class: temperature
-    
-    indoor_humidity_sensor:
-      name: Indoor Humidity Sensor (Optional)
-      description: Relative humidity sensor for enhanced comfort calculation
-      default: ""
-      selector:
-        entity:
-          domain: sensor
-          device_class: humidity
-    
-    outdoor_humidity_sensor:
-      name: Outdoor Humidity Sensor (Optional)
-      description: Outdoor humidity sensor or weather service for natural ventilation decisions
+      description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
       default: ""
       selector:
         entity:
           domain: 
             - sensor
+            - input_number
+    
+    indoor_humidity_sensor:
+      name: Indoor Humidity Sensor (Optional)
+      description: Humidity sensor or input number for enhanced comfort calculation
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
+    
+    outdoor_humidity_sensor:
+      name: Outdoor Humidity Sensor (Optional)
+      description: Humidity sensor, input number, or weather service for natural ventilation decisions
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
             - weather
     
     use_operative_temperature:
@@ -227,7 +233,12 @@ variables:
     {% else %}
       {{ states(outdoor_sensor_id) | float(20) }}
     {% endif %}
-  indoor_air_temp: "{{ states(indoor_sensor_id) | float(20) }}"
+  indoor_air_temp: >
+    {% if indoor_sensor_id.startswith('weather.') %}
+      {{ state_attr(indoor_sensor_id, 'temperature') | float(20) }}
+    {% else %}
+      {{ states(indoor_sensor_id) | float(20) }}
+    {% endif %}
   
   # Mean radiant temperature (optional)
   mean_radiant_temp: >

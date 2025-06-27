@@ -83,6 +83,34 @@ humidity_comfort_enable: true
 natural_ventilation_enable: true
 ```
 
+### Manual Override Setup (with input_number)
+```yaml
+# Create input numbers for manual control
+input_number:
+  outdoor_temp_override:
+    name: "Outdoor Temperature Override"
+    min: -20
+    max: 50
+    step: 0.1
+    unit_of_measurement: "°C"
+    initial: 20
+    
+  humidity_override:
+    name: "Humidity Override"
+    min: 0
+    max: 100
+    step: 1
+    unit_of_measurement: "%"
+    initial: 50
+
+# Blueprint configuration with manual overrides
+climate_entity: climate.living_room_ac
+indoor_temp_sensor: sensor.room_temperature
+outdoor_temp_sensor: input_number.outdoor_temp_override  # Manual control
+outdoor_humidity_sensor: input_number.humidity_override  # Manual humidity
+comfort_category: "II"
+```
+
 ## 📊 **Comparison: Weather Service vs Physical Sensor**
 
 | Feature | Weather Service | Physical Sensor |

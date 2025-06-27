@@ -43,14 +43,14 @@
 
 ### Required Inputs (Minimum Setup)
 - **Climate Entity**: Your AC/heating device (SmartIR, etc.)
-- **Indoor Temperature Sensor**: Room temperature sensor  
-- **Outdoor Temperature Sensor**: Weather service (OpenWeatherMap, Open-Meteo) or physical sensor
+- **Indoor Temperature Sensor**: Room sensor, weather service, or input number  
+- **Outdoor Temperature Sensor**: Weather service, physical sensor, or input number
 
 ### Optional Advanced Inputs
 - **Occupancy Sensor**: Motion or presence detector (energy savings)
-- **Mean Radiant Temperature Sensor**: Wall temperature (operative temperature)
-- **Indoor Humidity Sensor**: Room humidity (humidity corrections)
-- **Outdoor Humidity Sensor**: External humidity (natural ventilation)
+- **Mean Radiant Temperature Sensor**: Wall temperature sensor or input number (operative temperature)
+- **Indoor Humidity Sensor**: Room humidity sensor or input number (humidity corrections)
+- **Outdoor Humidity Sensor**: External humidity sensor, weather service, or input number (natural ventilation)
 - **Air Velocity Settings**: Fan speed control and cooling effects
 
 > **💡 Pro Tip**: Start with the basic 3-sensor setup - it works perfectly! Add advanced sensors later for enhanced precision and energy savings.
@@ -73,6 +73,14 @@ outdoor_temp_sensor: weather.openweathermap        # OpenWeatherMap
 outdoor_temp_sensor: weather.open_meteo           # Open-Meteo (no API key)
 outdoor_temp_sensor: weather.met                  # Met.no
 outdoor_temp_sensor: sensor.outdoor_temperature   # Physical sensor
+```
+
+#### 🎛️ **Manual Control Options**
+```yaml
+# Use input numbers for manual override or testing
+outdoor_temp_sensor: input_number.outdoor_temp_override     # Manual control
+indoor_temp_sensor: input_number.room_temp_calibrated      # Calibrated sensor
+mean_radiant_temp_sensor: input_number.wall_temperature    # Manual wall temp
 ```
 
 #### 🎯 **Advanced Setup (Maximum Precision)**

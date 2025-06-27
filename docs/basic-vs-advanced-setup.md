@@ -254,6 +254,59 @@ adaptive_air_velocity: true
 # Monitor logs to see what features are active
 ```
 
+## 🎛️ Using Input Number Entities
+
+### Manual Temperature Control
+You can use `input_number` entities for manual temperature override or calculated values:
+
+```yaml
+# Create input numbers in configuration.yaml
+input_number:
+  outdoor_temperature_override:
+    name: "Outdoor Temperature Override"
+    min: -20
+    max: 50
+    step: 0.1
+    unit_of_measurement: "°C"
+    
+  wall_temperature_sensor:
+    name: "Wall Temperature"
+    min: 10
+    max: 40
+    step: 0.1
+    unit_of_measurement: "°C"
+
+# Use in blueprint
+climate_entity: climate.your_ac
+indoor_temp_sensor: sensor.room_temperature
+outdoor_temp_sensor: input_number.outdoor_temperature_override  # Manual override
+mean_radiant_temp_sensor: input_number.wall_temperature_sensor  # Manual wall temp
+```
+
+### Template-Based Calculations
+```yaml
+# Advanced template for calculated outdoor temperature
+template:
+  - sensor:
+      - name: "Calculated Outdoor Temperature"
+        state: >
+          {% set weather_temp = state_attr('weather.home', 'temperature') | float(20) %}
+          {% set manual_offset = states('input_number.temp_offset') | float(0) %}
+          {{ (weather_temp + manual_offset) | round(1) }}
+        unit_of_measurement: "°C"
+        device_class: temperature
+
+# Use calculated sensor in blueprint
+outdoor_temp_sensor: sensor.calculated_outdoor_temperature
+```
+
+### Use Cases for Input Numbers
+- **Manual override** during extreme weather
+- **Calibration offsets** for sensor accuracy
+- **Calculated values** from multiple sources
+- **Testing scenarios** for development
+- **Integration** with external systems
+
 ## 🎯 Bottom Line
 
 **The blueprint works perfectly with just 3 basic sensors!** 
