@@ -4,52 +4,9 @@ blueprint:
     Intelligent climate control implementing ASHRAE 55 adaptive comfort model with energy optimization.
     
     This blueprint dynamically adjusts comfort zones based on outdoor temperature, provides 15-30% energy savings,
-    and works seamlessly with SmartIR and other climate pla  # Adaptive fan speed calculation
-  optimal_fan_speed: >
-    {% if adaptive_air_velocity_val %}
-      {% set temp_deviation = (indoor_temp - adaptive_comfort_temp) | abs %}
-      {% if temp_deviation > 3 %}
-        high
-      {% elif temp_deviation > 1.5 %}
-        medium
-      {% elif temp_deviation > 0.5 %}
-        low
-      {% else %}
-        auto
-      {% endif %}
-    {% else %}
-      auto
-    {% endif %}
-  
-  # Current climate state checks to avoid unnecessary commands
-  current_hvac_mode: >
-    {{ state_attr(climate_entity_id, 'hvac_mode') | string | lower }}
-  
-  current_temperature: >
-    {{ state_attr(climate_entity_id, 'temperature') | float(0) }}
-  
-  current_fan_mode: >
-    {{ state_attr(climate_entity_id, 'fan_mode') | string | lower }}
-  
-  # Check if commands would actually change anything
-  hvac_mode_needs_change: >
-    {% if indoor_temp < comfort_temp_min %}
-      {{ current_hvac_mode != 'heat' }}
-    {% elif indoor_temp > comfort_temp_max %}
-      {{ current_hvac_mode != 'cool' }}
-    {% else %}
-      false
-    {% endif %}
-  
-  temperature_needs_change: >
-    {{ (current_temperature - target_temp) | abs > 0.5 }}
-  
-  fan_mode_needs_change: >
-    {% if adaptive_air_velocity_val %}
-      {{ current_fan_mode != optimal_fan_speed }}
-    {% else %}
-      false
-    {% endif %}omain: automation
+    and works seamlessly with SmartIR and other climate platforms.
+    
+  domain: automation
   author: Marco Sinhoreli
   source_url: https://github.com/msinhore/adaptive-climate-blueprint
   
@@ -429,6 +386,36 @@ variables:
       {% else %}
         {{ adaptive_comfort_temp | round(1) }}
       {% endif %}
+    {% endif %}
+  
+  # Current climate state checks to avoid unnecessary commands
+  current_hvac_mode: >
+    {{ state_attr(climate_entity_id, 'hvac_mode') | string | lower }}
+  
+  current_temperature: >
+    {{ state_attr(climate_entity_id, 'temperature') | float(0) }}
+  
+  current_fan_mode: >
+    {{ state_attr(climate_entity_id, 'fan_mode') | string | lower }}
+  
+  # Check if commands would actually change anything
+  hvac_mode_needs_change: >
+    {% if indoor_temp < comfort_temp_min %}
+      {{ current_hvac_mode != 'heat' }}
+    {% elif indoor_temp > comfort_temp_max %}
+      {{ current_hvac_mode != 'cool' }}
+    {% else %}
+      false
+    {% endif %}
+  
+  temperature_needs_change: >
+    {{ (current_temperature - target_temp) | abs > 0.5 }}
+  
+  fan_mode_needs_change: >
+    {% if adaptive_air_velocity_val %}
+      {{ current_fan_mode != optimal_fan_speed }}
+    {% else %}
+      false
     {% endif %}
   
   # ASHRAE 55 compliance notes
