@@ -130,17 +130,6 @@ blueprint:
           max: 32.0
           step: 0.5
           unit_of_measurement: "°C"
-    
-    update_interval:
-      name: Update Interval
-      description: How often to recalculate comfort zones (minutes)
-      default: 10
-      selector:
-        number:
-          min: 5
-          max: 60
-          step: 5
-          unit_of_measurement: "minutes"
 
 variables:
   # Comfort category tolerances (°C)
@@ -154,7 +143,7 @@ variables:
     {% endif %}
   
   # ASHRAE 55 adaptive comfort temperature calculation
-  outdoor_temp: "{{ states(outdoor_temp_sensor) | float(20) }}"
+  outdoor_temp: "{{ states(!input outdoor_temp_sensor) | float(20) }}"
   
   # Adaptive comfort temperature: T_comfort = 18.9 + 0.255 × T_outdoor
   adaptive_comfort_temp: >
@@ -168,12 +157,12 @@ variables:
     {{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp] | min | round(1) }}
   
   # Current indoor temperature
-  indoor_temp: "{{ states(indoor_temp_sensor) | float(20) }}"
+  indoor_temp: "{{ states(!input indoor_temp_sensor) | float(20) }}"
   
   # Occupancy status
   is_occupied: >
     {% if occupancy_sensor %}
-      {{ is_state(occupancy_sensor, 'on') }}
+      {{ is_state(!input occupancy_sensor, 'on') }}
     {% else %}
       true
     {% endif %}
@@ -247,23 +236,9 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ states(climate_entity) not in ['unavailable', 'unknown'] and
-         states(indoor_temp_sensor) not in ['unavailable', 'unknown'] and
-         states(outdoor_temp_sensor) not in ['unavailable', 'unknown'] }}
-  
-  # Respect update interval for scheduled updates
-  - condition: template
-    value_template: >
-      {% if trigger.id == "scheduled_update" %}
-        {% set last_triggered = state_attr(this.entity_id, 'last_triggered') %}
-        {% if last_triggered %}
-          {{ (as_timestamp(now()) - as_timestamp(last_triggered)) / 60 >= update_interval }}
-        {% else %}
-          true
-        {% endif %}
-      {% else %}
-        true
-      {% endif %}
+      {{ states(!input climate_entity) not in ['unavailable', 'unknown'] and
+         states(!input indoor_temp_sensor) not in ['unavailable', 'unknown'] and
+         states(!input outdoor_temp_sensor) not in ['unavailable', 'unknown'] }}
 
 action:
   - choose:
