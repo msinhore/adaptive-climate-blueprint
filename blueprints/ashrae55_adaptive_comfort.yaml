@@ -211,7 +211,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: "/{{ update_interval }}"
+    minutes: "/10"
     id: "scheduled_update"
   
   - platform: state
@@ -235,6 +235,20 @@ condition:
       {{ states(climate_entity) not in ['unavailable', 'unknown'] and
          states(indoor_temp_sensor) not in ['unavailable', 'unknown'] and
          states(outdoor_temp_sensor) not in ['unavailable', 'unknown'] }}
+  
+  # Respect update interval for scheduled updates
+  - condition: template
+    value_template: >
+      {% if trigger.id == "scheduled_update" %}
+        {% set last_triggered = state_attr(this.entity_id, 'last_triggered') %}
+        {% if last_triggered %}
+          {{ (as_timestamp(now()) - as_timestamp(last_triggered)) / 60 >= update_interval }}
+        {% else %}
+          true
+        {% endif %}
+      {% else %}
+        true
+      {% endif %}
 
 action:
   - choose:
