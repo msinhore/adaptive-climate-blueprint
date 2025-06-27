@@ -28,11 +28,12 @@ blueprint:
     
     outdoor_temp_sensor:
       name: Outdoor Temperature Sensor
-      description: External temperature sensor for adaptive comfort calculations
+      description: External temperature sensor or weather service for adaptive comfort calculations
       selector:
         entity:
-          domain: sensor
-          device_class: temperature
+          domain: 
+            - sensor
+            - weather
     
     occupancy_sensor:
       name: Occupancy Sensor (Optional)
@@ -143,12 +144,13 @@ blueprint:
     
     outdoor_humidity_sensor:
       name: Outdoor Humidity Sensor (Optional)
-      description: Outdoor humidity sensor for natural ventilation decisions
+      description: Outdoor humidity sensor or weather service for natural ventilation decisions
       default: ""
       selector:
         entity:
-          domain: sensor
-          device_class: humidity
+          domain: 
+            - sensor
+            - weather
     
     use_operative_temperature:
       name: Use Operative Temperature
@@ -219,7 +221,12 @@ variables:
       4.0
     {% endif %}
   
-  outdoor_temp: "{{ states(outdoor_sensor_id) | float(20) }}"
+  outdoor_temp: >
+    {% if outdoor_sensor_id.startswith('weather.') %}
+      {{ state_attr(outdoor_sensor_id, 'temperature') | float(20) }}
+    {% else %}
+      {{ states(outdoor_sensor_id) | float(20) }}
+    {% endif %}
   indoor_air_temp: "{{ states(indoor_sensor_id) | float(20) }}"
   
   # Mean radiant temperature (optional)
@@ -251,7 +258,11 @@ variables:
   
   outdoor_humidity: >
     {% if outdoor_humidity_sensor_id and outdoor_humidity_sensor_id != "" %}
-      {{ states(outdoor_humidity_sensor_id) | float(50) }}
+      {% if outdoor_humidity_sensor_id.startswith('weather.') %}
+        {{ state_attr(outdoor_humidity_sensor_id, 'humidity') | float(50) }}
+      {% else %}
+        {{ states(outdoor_humidity_sensor_id) | float(50) }}
+      {% endif %}
     {% else %}
       50
     {% endif %}

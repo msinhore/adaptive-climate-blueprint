@@ -35,11 +35,23 @@ if (to < 25 && d.vel_a > 0.3) {
 
 ## 🎯 Blueprint Implementation Analysis
 
+### ✅ **Required Sensors (Minimum Setup)**
+1. **Climate Entity**: Your AC/heat pump ✅ **REQUIRED**
+2. **Indoor Temperature Sensor**: Room temperature ✅ **REQUIRED**  
+3. **Outdoor Temperature Sensor**: External temperature ✅ **REQUIRED**
+
+### 🔧 **Optional Advanced Sensors**
+1. **Mean Radiant Temperature Sensor**: Wall temperature (for operative temp) 📋 **OPTIONAL**
+2. **Indoor Humidity Sensor**: Room humidity (for humidity corrections) 📋 **OPTIONAL**
+3. **Outdoor Humidity Sensor**: External humidity (for natural ventilation) 📋 **OPTIONAL**
+4. **Occupancy Sensor**: Presence detection (for energy savings) 📋 **OPTIONAL**
+
 ### ✅ **Correctly Implemented**
 1. **Base Formula**: `18.9 + 0.255 * outdoor_temp` ✅
 2. **Comfort Categories**: ±2°C, ±3°C, ±4°C ✅
-3. **Operative Temperature**: `(air_temp + radiant_temp) / 2` ✅
+3. **Operative Temperature**: `(air_temp + radiant_temp) / 2` ✅ **OPTIONAL**
 4. **User Limits**: Min/max temperature constraints ✅
+5. **Backward Compatibility**: Works with basic 3-sensor setup ✅
 
 ### ⚠️ **Areas for Improvement**
 

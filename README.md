@@ -41,13 +41,55 @@
 
 ## 🔧 Blueprint Configuration
 
-### Required Inputs
+### Required Inputs (Minimum Setup)
 - **Climate Entity**: Your AC/heating device (SmartIR, etc.)
-- **Indoor Temperature Sensor**: Room temperature sensor
-- **Outdoor Temperature Sensor**: External weather sensor
+- **Indoor Temperature Sensor**: Room temperature sensor  
+- **Outdoor Temperature Sensor**: Weather service (OpenWeatherMap, Open-Meteo) or physical sensor
 
-### Optional Inputs
-- **Occupancy Sensor**: Motion or presence detector
+### Optional Advanced Inputs
+- **Occupancy Sensor**: Motion or presence detector (energy savings)
+- **Mean Radiant Temperature Sensor**: Wall temperature (operative temperature)
+- **Indoor Humidity Sensor**: Room humidity (humidity corrections)
+- **Outdoor Humidity Sensor**: External humidity (natural ventilation)
+- **Air Velocity Settings**: Fan speed control and cooling effects
+
+> **💡 Pro Tip**: Start with the basic 3-sensor setup - it works perfectly! Add advanced sensors later for enhanced precision and energy savings.
+
+### Configuration Approaches
+
+#### 🚀 **Quick Start (Basic Setup)**
+```yaml
+# Only 3 sensors needed - full ASHRAE 55 compliance!
+climate_entity: climate.your_ac
+indoor_temp_sensor: sensor.room_temperature
+outdoor_temp_sensor: weather.openweathermap        # Weather service (recommended)
+comfort_category: "II"  # ±3°C tolerance
+```
+
+#### 🌤️ **Weather Service Options**
+```yaml
+# Use integrated weather services (no outdoor hardware needed!)
+outdoor_temp_sensor: weather.openweathermap        # OpenWeatherMap
+outdoor_temp_sensor: weather.open_meteo           # Open-Meteo (no API key)
+outdoor_temp_sensor: weather.met                  # Met.no
+outdoor_temp_sensor: sensor.outdoor_temperature   # Physical sensor
+```
+
+#### 🎯 **Advanced Setup (Maximum Precision)**
+```yaml
+# Add optional sensors for enhanced features
+mean_radiant_temp_sensor: sensor.wall_temperature    # Operative temperature
+indoor_humidity_sensor: sensor.room_humidity         # Humidity corrections  
+occupancy_sensor: binary_sensor.room_motion         # Energy savings
+use_operative_temperature: true                      # Enable advanced features
+comfort_precision_mode: true                        # CBE tool accuracy
+```
+
+📖 **Configuration Guides:**
+- **[Complete Setup Guide](docs/basic-vs-advanced-setup.md)** - Detailed configuration options
+- **[Weather Services Setup](examples/configuracao-servicos-meteorologicos.md)** - Using weather integrations (Portuguese)
+
+### Additional Settings
 - **Comfort Category**: ASHRAE 55 categories (I, II, III)
 - **Energy Save Mode**: Enhanced efficiency features
 - **Natural Ventilation**: Free cooling optimization
