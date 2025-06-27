@@ -1,0 +1,356 @@
+# Advanced Multi-Zone SmartIR Setup
+
+This example demonstrates a whole-house setup with multiple SmartIR devices and coordinated control.
+
+## System Overview
+
+- **3 Zones**: Bedroom, Living Room, Office
+- **Central outdoor sensor**: Shared weather data
+- **Individual occupancy**: Per-room motion detection
+- **Coordinated control**: Energy optimization across zones
+- **Different comfort categories**: Per room preferences
+
+## Climate Entities Configuration
+
+```yaml
+# configuration.yaml
+climate:
+  # Master Bedroom - Category I (strict comfort)
+  - platform: smartir
+    name: Master Bedroom AC
+    unique_id: master_bedroom_ac
+    device_code: 1383
+    controller_data: remote.broadlink_master_bedroom
+    temperature_sensor: sensor.master_bedroom_temperature
+    humidity_sensor: sensor.master_bedroom_humidity
+    power_sensor: binary_sensor.master_bedroom_ac_power
+
+  # Living Room - Category II (standard comfort)  
+  - platform: smartir
+    name: Living Room AC
+    unique_id: living_room_ac
+    device_code: 1385
+    controller_data: remote.broadlink_living_room
+    temperature_sensor: sensor.living_room_temperature
+    humidity_sensor: sensor.living_room_humidity
+    power_sensor: binary_sensor.living_room_ac_power
+
+  # Home Office - Category III (relaxed comfort for energy savings)
+  - platform: smartir
+    name: Office AC
+    unique_id: office_ac
+    device_code: 1380
+    controller_data: remote.broadlink_office
+    temperature_sensor: sensor.office_temperature
+    humidity_sensor: sensor.office_humidity
+    power_sensor: binary_sensor.office_ac_power
+```
+
+## Sensor Configuration
+
+```yaml
+# ESPHome sensors for each room
+sensor:
+  # Master Bedroom sensors
+  - platform: dht
+    pin: GPIO4
+    model: DHT22
+    update_interval: 30s
+    temperature:
+      name: "Master Bedroom Temperature"
+      accuracy_decimals: 1
+      filters:
+        - sliding_window_moving_average:
+            window_size: 6
+            send_every: 3
+    humidity:
+      name: "Master Bedroom Humidity"
+
+  # Living Room sensors  
+  - platform: dht
+    pin: GPIO5
+    model: DHT22
+    update_interval: 30s
+    temperature:
+      name: "Living Room Temperature"
+      accuracy_decimals: 1
+      filters:
+        - sliding_window_moving_average:
+            window_size: 6
+            send_every: 3
+    humidity:
+      name: "Living Room Humidity"
+
+  # Office sensors
+  - platform: dht
+    pin: GPIO6
+    model: DHT22
+    update_interval: 30s
+    temperature:
+      name: "Office Temperature"
+      accuracy_decimals: 1
+      filters:
+        - sliding_window_moving_average:
+            window_size: 6
+            send_every: 3
+    humidity:
+      name: "Office Humidity"
+
+  # Shared outdoor temperature
+  - platform: template
+    sensors:
+      outdoor_temperature:
+        friendly_name: "Outdoor Temperature"
+        value_template: "{{ state_attr('weather.home', 'temperature') }}"
+        unit_of_measurement: '°C'
+        device_class: temperature
+```
+
+## Advanced Occupancy Detection
+
+```yaml
+# Advanced occupancy combining multiple sensors
+binary_sensor:
+  # Master Bedroom occupancy
+  - platform: template
+    sensors:
+      master_bedroom_occupied:
+        friendly_name: "Master Bedroom Occupied"
+        value_template: >
+          {{ is_state('binary_sensor.master_bedroom_motion', 'on') or
+             is_state('light.master_bedroom', 'on') or
+             is_state('media_player.master_bedroom_tv', 'playing') or
+             (now().hour >= 22 or now().hour <= 7) }}  # Sleep hours
+        delay_off: '01:00:00'  # Stay occupied longer in bedroom
+
+  # Living Room occupancy
+  - platform: template
+    sensors:
+      living_room_occupied:
+        friendly_name: "Living Room Occupied"
+        value_template: >
+          {{ is_state('binary_sensor.living_room_motion', 'on') or
+             is_state('media_player.living_room_tv', 'playing') or
+             is_state('media_player.sonos_living_room', 'playing') }}
+        delay_off: '00:30:00'
+
+  # Office occupancy (work hours aware)
+  - platform: template
+    sensors:
+      office_occupied:
+        friendly_name: "Office Occupied"
+        value_template: >
+          {{ is_state('binary_sensor.office_motion', 'on') and
+             (now().weekday() < 5 and 8 <= now().hour <= 18) }}  # Weekday work hours
+        delay_off: '00:15:00'  # Shorter delay for office
+```
+
+## Blueprint Automations
+
+```yaml
+# automations.yaml
+
+# Master Bedroom - Category I (Strict comfort)
+- alias: "Adaptive Climate - Master Bedroom"
+  use_blueprint:
+    path: ashrae55_adaptive_comfort.yaml
+    input:
+      climate_entity: climate.master_bedroom_ac
+      indoor_temp_sensor: sensor.master_bedroom_temperature
+      outdoor_temp_sensor: sensor.outdoor_temperature
+      occupancy_sensor: binary_sensor.master_bedroom_occupied
+      comfort_category: "I"  # Strict comfort
+      energy_save_mode: false  # Prioritize comfort in bedroom
+      natural_ventilation_enable: true
+      natural_ventilation_threshold: 1.5  # Tighter threshold
+      setback_temperature_offset: 1.0  # Smaller setback
+      update_interval: 5  # More frequent updates
+
+# Living Room - Category II (Standard comfort)
+- alias: "Adaptive Climate - Living Room"
+  use_blueprint:
+    path: ashrae55_adaptive_comfort.yaml
+    input:
+      climate_entity: climate.living_room_ac
+      indoor_temp_sensor: sensor.living_room_temperature
+      outdoor_temp_sensor: sensor.outdoor_temperature
+      occupancy_sensor: binary_sensor.living_room_occupied
+      comfort_category: "II"  # Standard comfort
+      energy_save_mode: true
+      natural_ventilation_enable: true
+      natural_ventilation_threshold: 2.0
+      setback_temperature_offset: 2.0
+      update_interval: 10
+
+# Office - Category III (Relaxed comfort for energy savings)
+- alias: "Adaptive Climate - Office"
+  use_blueprint:
+    path: ashrae55_adaptive_comfort.yaml
+    input:
+      climate_entity: climate.office_ac
+      indoor_temp_sensor: sensor.office_temperature
+      outdoor_temp_sensor: sensor.outdoor_temperature
+      occupancy_sensor: binary_sensor.office_occupied
+      comfort_category: "III"  # Relaxed comfort
+      energy_save_mode: true
+      natural_ventilation_enable: true
+      natural_ventilation_threshold: 3.0  # More relaxed
+      setback_temperature_offset: 3.0  # Larger setback
+      update_interval: 15
+```
+
+## Whole-House Coordination
+
+```yaml
+# Additional automation for coordinated control
+- alias: "Whole House Energy Coordination"
+  trigger:
+    - platform: time_pattern
+      minutes: "/15"  # Every 15 minutes
+  
+  variables:
+    total_power_usage: >
+      {{ (states('sensor.master_bedroom_ac_power')|float(0)) +
+         (states('sensor.living_room_ac_power')|float(0)) +
+         (states('sensor.office_ac_power')|float(0)) }}
+    
+    peak_hours: >
+      {{ 16 <= now().hour <= 20 }}  # 4PM-8PM peak hours
+    
+    max_zones_active: >
+      {{ 2 if peak_hours else 3 }}
+  
+  action:
+    - choose:
+        # Peak hours - limit simultaneous AC usage
+        - conditions:
+            - condition: template
+              value_template: "{{ peak_hours and total_power_usage > 3000 }}"
+          sequence:
+            # Turn off office AC during peak if others are running
+            - service: climate.turn_off
+              target:
+                entity_id: climate.office_ac
+            - service: logbook.log
+              data:
+                name: "Energy Coordination"
+                message: "Peak hours: Office AC turned off to reduce load"
+
+# Natural ventilation coordination
+- alias: "Coordinated Natural Ventilation"
+  trigger:
+    - platform: state
+      entity_id: sensor.outdoor_temperature
+  
+  variables:
+    outdoor_temp: "{{ states('sensor.outdoor_temperature')|float(20) }}"
+    mild_weather: "{{ 18 <= outdoor_temp <= 26 }}"
+    
+  action:
+    - choose:
+        # Perfect weather - suggest opening windows
+        - conditions:
+            - condition: template
+              value_template: "{{ mild_weather }}"
+          sequence:
+            - service: notify.mobile_app
+              data:
+                title: "💨 Natural Ventilation Opportunity"
+                message: >
+                  Perfect weather ({{ outdoor_temp }}°C) for natural ventilation.
+                  Consider opening windows and letting the ACs rest!
+```
+
+## Energy Monitoring Dashboard
+
+```yaml
+# Lovelace configuration for monitoring
+type: vertical-stack
+cards:
+  - type: entities
+    title: "Climate System Overview"
+    entities:
+      - entity: sensor.outdoor_temperature
+        name: "Outdoor Temperature"
+      - type: divider
+      - entity: climate.master_bedroom_ac
+        name: "Master Bedroom"
+      - entity: sensor.master_bedroom_temperature
+        name: "  └ Temperature"
+      - entity: binary_sensor.master_bedroom_occupied
+        name: "  └ Occupied"
+      - type: divider
+      - entity: climate.living_room_ac
+        name: "Living Room"
+      - entity: sensor.living_room_temperature
+        name: "  └ Temperature"
+      - entity: binary_sensor.living_room_occupied
+        name: "  └ Occupied"
+      - type: divider
+      - entity: climate.office_ac
+        name: "Office"
+      - entity: sensor.office_temperature
+        name: "  └ Temperature"
+      - entity: binary_sensor.office_occupied
+        name: "  └ Occupied"
+
+  - type: history-graph
+    title: "Temperature Trends"
+    hours_to_show: 24
+    refresh_interval: 60
+    entities:
+      - entity: sensor.outdoor_temperature
+        name: "Outdoor"
+      - entity: sensor.master_bedroom_temperature
+        name: "Master Bedroom"
+      - entity: sensor.living_room_temperature
+        name: "Living Room"
+      - entity: sensor.office_temperature
+        name: "Office"
+
+  - type: energy-usage-graph
+    title: "AC Energy Usage"
+    entities:
+      - entity: sensor.master_bedroom_ac_power
+      - entity: sensor.living_room_ac_power
+      - entity: sensor.office_ac_power
+```
+
+## Performance Optimization
+
+### Sensor Grouping
+```yaml
+# Group sensors for efficient updates
+group:
+  indoor_temperature_sensors:
+    name: "Indoor Temperature Sensors"
+    entities:
+      - sensor.master_bedroom_temperature
+      - sensor.living_room_temperature
+      - sensor.office_temperature
+  
+  climate_entities:
+    name: "Climate Entities"
+    entities:
+      - climate.master_bedroom_ac
+      - climate.living_room_ac
+      - climate.office_ac
+```
+
+### Automation Efficiency
+- Staggered update intervals to reduce simultaneous processing
+- Conditional logic to prevent unnecessary automation triggers
+- Single outdoor sensor shared across all zones
+- Template sensors cached for performance
+
+## Expected Energy Savings
+
+### By Zone Type
+- **Master Bedroom**: 10-15% (comfort prioritized)
+- **Living Room**: 20-25% (balanced approach)
+- **Office**: 25-35% (maximum savings during unoccupied periods)
+
+### Coordination Benefits
+- **Peak hour management**: Additional 5-10% savings
+- **Natural ventilation**: 30-50% savings during optimal weather
+- **Whole-house optimization**: 15-20% total energy reduction

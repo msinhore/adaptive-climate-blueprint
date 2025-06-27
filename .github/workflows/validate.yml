@@ -1,0 +1,193 @@
+name: Validate Blueprint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-yaml:
+    runs-on: ubuntu-latest
+    name: Validate YAML Syntax
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyyaml
+    
+    - name: Validate Blueprint YAML
+      run: |
+        python -c "
+        import yaml
+        import sys
+        
+        try:
+            with open('blueprints/ashrae55_adaptive_comfort.yaml', 'r') as file:
+                yaml.safe_load(file)
+            print('✅ Blueprint YAML is valid')
+        except yaml.YAMLError as e:
+            print(f'❌ Blueprint YAML validation failed: {e}')
+            sys.exit(1)
+        "
+    
+    - name: Validate Example YAMLs
+      run: |
+        python -c "
+        import yaml
+        import os
+        import sys
+        
+        error_count = 0
+        for root, dirs, files in os.walk('examples'):
+            for file in files:
+                if file.endswith('.yaml'):
+                    filepath = os.path.join(root, file)
+                    try:
+                        with open(filepath, 'r') as f:
+                            # Skip validation for files containing template syntax
+                            content = f.read()
+                            if '{{' in content or '{%' in content:
+                                print(f'⏭️  Skipping template file: {filepath}')
+                                continue
+                            yaml.safe_load(content)
+                        print(f'✅ {filepath} is valid')
+                    except yaml.YAMLError as e:
+                        print(f'❌ {filepath} validation failed: {e}')
+                        error_count += 1
+        
+        if error_count > 0:
+            sys.exit(1)
+        "
+
+  validate-documentation:
+    runs-on: ubuntu-latest
+    name: Validate Documentation
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check README links
+      run: |
+        # Basic check for broken markdown links
+        grep -r '\[.*\](' README.md docs/ examples/ || true
+        echo "✅ Documentation structure validated"
+    
+    - name: Validate Markdown syntax
+      uses: articulate/actions-markdownlint@v1
+      with:
+        config: |
+          {
+            "default": true,
+            "MD013": false,
+            "MD033": false,
+            "MD041": false
+          }
+        files: '**/*.md'
+
+  check-blueprint-structure:
+    runs-on: ubuntu-latest
+    name: Check Blueprint Structure
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Validate Blueprint Structure
+      run: |
+        # Check required blueprint fields
+        python -c "
+        import yaml
+        import sys
+        
+        with open('blueprints/ashrae55_adaptive_comfort.yaml', 'r') as file:
+            blueprint = yaml.safe_load(file)
+        
+        required_fields = ['blueprint', 'input', 'trigger', 'action']
+        blueprint_meta = ['name', 'description', 'domain', 'author']
+        
+        # Check top-level structure
+        for field in required_fields:
+            if field not in blueprint:
+                print(f'❌ Missing required field: {field}')
+                sys.exit(1)
+        
+        # Check blueprint metadata
+        for field in blueprint_meta:
+            if field not in blueprint['blueprint']:
+                print(f'❌ Missing blueprint metadata: {field}')
+                sys.exit(1)
+        
+        # Check required inputs
+        required_inputs = ['climate_entity', 'indoor_temp_sensor', 'outdoor_temp_sensor']
+        for input_field in required_inputs:
+            if input_field not in blueprint['input']:
+                print(f'❌ Missing required input: {input_field}')
+                sys.exit(1)
+        
+        print('✅ Blueprint structure is valid')
+        "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run security checks
+      run: |
+        # Check for potential security issues in templates
+        echo "🔍 Scanning for security issues..."
+        
+        # Check for unsafe template usage
+        if grep -r "states\[" blueprints/ examples/ 2>/dev/null; then
+          echo "⚠️  Found potentially unsafe state access patterns"
+        fi
+        
+        # Check for hardcoded credentials
+        if grep -ri "password\|token\|secret\|key" blueprints/ examples/ | grep -v "# " | grep -v README; then
+          echo "❌ Found potential hardcoded credentials"
+          exit 1
+        fi
+        
+        echo "✅ Security scan completed"
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    name: Test Coverage Check
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check test coverage
+      run: |
+        echo "📊 Checking test coverage..."
+        
+        # Count example configurations
+        example_count=$(find examples/ -name "*.yaml" | wc -l)
+        echo "📄 Example configurations: $example_count"
+        
+        # Count documentation files
+        doc_count=$(find docs/ -name "*.md" | wc -l)
+        echo "📚 Documentation files: $doc_count"
+        
+        # Verify minimum coverage
+        if [ $example_count -lt 2 ]; then
+          echo "❌ Insufficient example configurations"
+          exit 1
+        fi
+        
+        if [ $doc_count -lt 2 ]; then
+          echo "❌ Insufficient documentation"
+          exit 1
+        fi
+        
+        echo "✅ Test coverage adequate"

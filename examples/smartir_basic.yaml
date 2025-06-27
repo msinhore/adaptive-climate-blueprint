@@ -1,0 +1,168 @@
+# Basic SmartIR Integration
+
+This example shows a simple setup with SmartIR climate device and basic sensors.
+
+## Configuration Files
+
+### 1. SmartIR Climate Entity
+
+```yaml
+# configuration.yaml
+climate:
+  - platform: smartir
+    name: Bedroom AC
+    unique_id: bedroom_ac
+    device_code: 1383  # Replace with your device code
+    controller_data: remote.broadlink_bedroom
+    temperature_sensor: sensor.bedroom_temperature
+    humidity_sensor: sensor.bedroom_humidity  # Optional
+    power_sensor: binary_sensor.bedroom_ac_power  # Optional
+```
+
+### 2. Temperature Sensors
+
+```yaml
+# ESPHome sensor example
+sensor:
+  - platform: dht
+    pin: GPIO4
+    model: DHT22
+    temperature:
+      name: "Bedroom Temperature"
+      id: bedroom_temp
+      filters:
+        - sliding_window_moving_average:
+            window_size: 10
+            send_every: 5
+    humidity:
+      name: "Bedroom Humidity" 
+      id: bedroom_humidity
+
+  # Outdoor temperature from weather integration
+  - platform: template
+    sensors:
+      outdoor_temperature:
+        friendly_name: "Outdoor Temperature"
+        value_template: "{{ state_attr('weather.home', 'temperature') }}"
+        unit_of_measurement: '°C'
+        device_class: temperature
+```
+
+### 3. Occupancy Sensor
+
+```yaml
+# Motion sensor for occupancy detection
+binary_sensor:
+  - platform: template
+    sensors:
+      bedroom_occupied:
+        friendly_name: "Bedroom Occupied"
+        value_template: >
+          {{ is_state('binary_sensor.bedroom_motion', 'on') or
+             is_state('media_player.bedroom_tv', 'playing') }}
+        delay_off: '00:30:00'  # Stay occupied for 30 min after last motion
+```
+
+## Blueprint Automation
+
+```yaml
+# automations.yaml
+- alias: "Adaptive Climate - Bedroom"
+  use_blueprint:
+    path: ashrae55_adaptive_comfort.yaml
+    input:
+      # Required inputs
+      climate_entity: climate.bedroom_ac
+      indoor_temp_sensor: sensor.bedroom_temperature
+      outdoor_temp_sensor: sensor.outdoor_temperature
+      
+      # Optional inputs
+      occupancy_sensor: binary_sensor.bedroom_occupied
+      comfort_category: "II"
+      energy_save_mode: true
+      natural_ventilation_enable: true
+      natural_ventilation_threshold: 2.0
+      setback_temperature_offset: 2.0
+      update_interval: 10
+```
+
+## Expected Behavior
+
+### Normal Operation
+- **Occupied + Cooling needed**: AC turns on to cool room to comfort zone
+- **Occupied + Heating needed**: AC turns on to heat room to comfort zone  
+- **Occupied + Natural ventilation**: AC turns off, relies on outdoor air
+- **Unoccupied**: Temperature setback based on energy save settings
+
+### Comfort Zones (Category II)
+- **Outdoor 20°C**: Comfort zone 21.0°C ± 3°C (18°C - 24°C)
+- **Outdoor 25°C**: Comfort zone 25.3°C ± 3°C (22.3°C - 28.3°C)
+- **Outdoor 30°C**: Comfort zone 26.6°C ± 3°C (23.6°C - 29.6°C)
+
+## Monitoring
+
+### Useful Template Sensors
+
+```yaml
+# Monitor comfort calculations
+sensor:
+  - platform: template
+    sensors:
+      adaptive_comfort_temperature:
+        friendly_name: "Adaptive Comfort Temperature"
+        value_template: >
+          {{ (18.9 + 0.255 * (states('sensor.outdoor_temperature')|float(20))) | round(1) }}
+        unit_of_measurement: '°C'
+      
+      comfort_zone_min:
+        friendly_name: "Comfort Zone Min"
+        value_template: >
+          {% set adaptive_temp = (18.9 + 0.255 * (states('sensor.outdoor_temperature')|float(20))) %}
+          {{ (adaptive_temp - 3.0) | round(1) }}
+        unit_of_measurement: '°C'
+      
+      comfort_zone_max:
+        friendly_name: "Comfort Zone Max"  
+        value_template: >
+          {% set adaptive_temp = (18.9 + 0.255 * (states('sensor.outdoor_temperature')|float(20))) %}
+          {{ (adaptive_temp + 3.0) | round(1) }}
+        unit_of_measurement: '°C'
+```
+
+### Dashboard Card
+
+```yaml
+# Lovelace card to monitor the system
+type: entities
+title: Bedroom Climate Control
+entities:
+  - entity: sensor.bedroom_temperature
+    name: "Current Temperature"
+  - entity: sensor.adaptive_comfort_temperature
+    name: "Target Comfort"
+  - entity: sensor.comfort_zone_min
+    name: "Comfort Min"
+  - entity: sensor.comfort_zone_max
+    name: "Comfort Max"
+  - entity: climate.bedroom_ac
+    name: "AC Status"
+  - entity: binary_sensor.bedroom_occupied
+    name: "Room Occupied"
+```
+
+## Troubleshooting
+
+### Common Issues
+1. **AC not responding**: Check SmartIR device code and remote entity
+2. **Temperature not updating**: Verify sensor entities and availability
+3. **Automation not triggering**: Check sensor state changes and automation mode
+
+### Debugging
+```yaml
+# Enable debug logging
+logger:
+  default: warning
+  logs:
+    homeassistant.components.automation: debug
+    custom_components.smartir: debug
+```
