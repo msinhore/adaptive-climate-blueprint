@@ -176,9 +176,11 @@ variables:
   target_temp: >
     {% if not is_occupied and energy_save_mode_val %}
       {% if indoor_temp > comfort_temp_max %}
-        {{ (comfort_temp_max + setback_temperature_offset_val) | round(1) }}
+        {{ comfort_temp_max | round(1) }}
+      {% elif indoor_temp < comfort_temp_min %}
+        {{ max(comfort_temp_min - setback_temperature_offset_val, min_comfort_temp_val) | round(1) }}
       {% else %}
-        {{ (comfort_temp_min - setback_temperature_offset_val) | round(1) }}
+        {{ adaptive_comfort_temp | round(1) }}
       {% endif %}
     {% else %}
       {% if indoor_temp < comfort_temp_min %}
