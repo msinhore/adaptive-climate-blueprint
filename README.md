@@ -130,6 +130,7 @@ Instead of keeping your AC at a fixed temperature (like 22°C all year), this bl
 - **Auto-Detection**: All advanced features are optional and auto-detected
 - **Better Validation**: Ensures sensor data is within realistic ranges
 - **Real-time Logging**: Shows compliance with ASHRAE 55 standards
+- **Smart State Management**: Only sends commands when AC settings need to change (no unnecessary beeps!)
 - **Flexible Configuration**: Start simple, add features as needed
 
 ## 🛠️ Advanced Configuration
@@ -219,6 +220,9 @@ Yes! That's actually one of the main target platforms. Works with any Home Assis
 ### "Can I use it without outdoor sensors?"
 Yes! v2 supports weather services (OpenWeatherMap, Open-Meteo, etc.) so you don't need physical outdoor sensors.
 
+### "My AC beeps every time - can this be fixed?"
+Yes! v2 includes smart state management that only sends commands when settings actually need to change. No more unnecessary beeps in bedrooms!
+
 ## 📚 Documentation & Setup Guides
 
 **For beginners:**
@@ -229,6 +233,7 @@ Yes! v2 supports weather services (OpenWeatherMap, Open-Meteo, etc.) so you don'
 - **[ASHRAE 55 Technical Details](docs/ashrae55_technical.md)** - Science behind the calculations
 - **[CBE Tool Validation](validation/cbe-tool-comparison.md)** - Accuracy verification
 - **[v2 Enhanced Features](docs/v2-enhanced-features.md)** - All optional settings explained
+- **[Smart State Management](docs/smart-state-management.md)** - How v2 avoids unnecessary AC commands
 
 ## 🤝 Community & Support
 
