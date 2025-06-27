@@ -127,11 +127,18 @@ variables:
   indoor_sensor_id: !input indoor_temp_sensor
   outdoor_sensor_id: !input outdoor_temp_sensor
   occupancy_sensor_id: !input occupancy_sensor
+  min_comfort_temp_val: !input min_comfort_temp
+  max_comfort_temp_val: !input max_comfort_temp
+  comfort_category_val: !input comfort_category
+  energy_save_mode_val: !input energy_save_mode
+  natural_ventilation_enable_val: !input natural_ventilation_enable
+  natural_ventilation_threshold_val: !input natural_ventilation_threshold
+  setback_temperature_offset_val: !input setback_temperature_offset
   
   comfort_tolerance: >
-    {% if comfort_category == "I" %}
+    {% if comfort_category_val == "I" %}
       2.0
-    {% elif comfort_category == "II" %}
+    {% elif comfort_category_val == "II" %}
       3.0
     {% else %}
       4.0
@@ -144,10 +151,10 @@ variables:
     {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
   
   comfort_temp_min: >
-    {{ [adaptive_comfort_temp - comfort_tolerance, min_comfort_temp] | max | round(1) }}
+    {{ [adaptive_comfort_temp - comfort_tolerance, min_comfort_temp_val] | max | round(1) }}
   
   comfort_temp_max: >
-    {{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp] | min | round(1) }}
+    {{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp_val] | min | round(1) }}
   
   is_occupied: >
     {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
@@ -157,9 +164,9 @@ variables:
     {% endif %}
   
   natural_ventilation_available: >
-    {% if natural_ventilation_enable %}
-      {{ (outdoor_temp >= (indoor_temp - natural_ventilation_threshold)) and 
-         (outdoor_temp <= (indoor_temp + natural_ventilation_threshold)) and
+    {% if natural_ventilation_enable_val %}
+      {{ (outdoor_temp >= (indoor_temp - natural_ventilation_threshold_val)) and 
+         (outdoor_temp <= (indoor_temp + natural_ventilation_threshold_val)) and
          (outdoor_temp >= comfort_temp_min) and 
          (outdoor_temp <= comfort_temp_max) }}
     {% else %}
@@ -167,11 +174,11 @@ variables:
     {% endif %}
   
   target_temp: >
-    {% if not is_occupied and energy_save_mode %}
+    {% if not is_occupied and energy_save_mode_val %}
       {% if indoor_temp > comfort_temp_max %}
-        {{ (comfort_temp_max + setback_temperature_offset) | round(1) }}
+        {{ (comfort_temp_max + setback_temperature_offset_val) | round(1) }}
       {% else %}
-        {{ (comfort_temp_min - setback_temperature_offset) | round(1) }}
+        {{ (comfort_temp_min - setback_temperature_offset_val) | round(1) }}
       {% endif %}
     {% else %}
       {% if indoor_temp < comfort_temp_min %}
@@ -289,7 +296,7 @@ action:
                 Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C,
                 Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C,
                 Occupancy: {{ 'Occupied' if is_occupied else 'Unoccupied' }},
-                Category: {{ comfort_category }} (±{{ comfort_tolerance }}°C)
+                Category: {{ comfort_category_val }} (±{{ comfort_tolerance }}°C)
 
 mode: single
 max_exceeded: silent
