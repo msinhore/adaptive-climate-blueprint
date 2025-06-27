@@ -256,10 +256,18 @@ variables:
       50
     {% endif %}
   
-  # Air velocity comfort correction (cooling effect)
+  # Air velocity comfort correction (cooling effect) - Only above 25°C operative temp
   air_velocity_offset: >
-    {% if air_velocity_val > 0.3 %}
-      {{ -0.8 * (air_velocity_val - 0.3) | round(1) }}
+    {% if operative_temp > 25 and air_velocity_val > 0.3 %}
+      {% if air_velocity_val >= 1.2 %}
+        -2.2
+      {% elif air_velocity_val >= 0.9 %}
+        -1.8
+      {% elif air_velocity_val >= 0.6 %}
+        -1.2
+      {% else %}
+        {{ -1.2 * ((air_velocity_val - 0.3) / 0.3) | round(1) }}
+      {% endif %}
     {% else %}
       0
     {% endif %}
@@ -278,11 +286,19 @@ variables:
   base_adaptive_comfort_temp: >
     {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
   
+  # ASHRAE 55 outdoor temperature validation (10-33.5°C range)
+  outdoor_temp_valid: >
+    {{ outdoor_temp >= 10 and outdoor_temp <= 33.5 }}
+  
   adaptive_comfort_temp: >
-    {% if comfort_precision_mode_val %}
-      {{ (base_adaptive_comfort_temp + air_velocity_offset + humidity_offset) | round(1) }}
+    {% if outdoor_temp_valid %}
+      {% if comfort_precision_mode_val %}
+        {{ (base_adaptive_comfort_temp + air_velocity_offset + humidity_offset) | round(1) }}
+      {% else %}
+        {{ base_adaptive_comfort_temp | round(1) }}
+      {% endif %}
     {% else %}
-      {{ base_adaptive_comfort_temp | round(1) }}
+      {{ 22.0 }}
     {% endif %}
   
   comfort_temp_min: >
@@ -348,6 +364,21 @@ variables:
       {% else %}
         {{ adaptive_comfort_temp | round(1) }}
       {% endif %}
+    {% endif %}
+  
+  # ASHRAE 55 compliance notes
+  compliance_notes: >
+    {% set notes = [] %}
+    {% if outdoor_temp < 10 or outdoor_temp > 33.5 %}
+      {% set notes = notes + ["Outdoor temp outside ASHRAE 55 range (10-33.5°C): " + outdoor_temp|string + "°C"] %}
+    {% endif %}
+    {% if operative_temp <= 25 and air_velocity_val > 0.3 %}
+      {% set notes = notes + ["Air velocity cooling only applies above 25°C operative temp"] %}
+    {% endif %}
+    {% if notes|length > 0 %}
+      {{ notes | join("; ") }}
+    {% else %}
+      "Compliant"
     {% endif %}
 
 trigger:
@@ -483,7 +514,8 @@ action:
                 Occupancy: {{ 'Occupied' if is_occupied else 'Unoccupied' }},
                 Category: {{ comfort_category_val }} (±{{ comfort_tolerance }}°C),
                 {% if comfort_precision_mode_val %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{ humidity_offset }}°C,{% endif %}
-                {% if adaptive_air_velocity_val %}Fan speed: {{ optimal_fan_speed }}{% endif %}
+                {% if adaptive_air_velocity_val %}Fan speed: {{ optimal_fan_speed }},{% endif %}
+                Compliance: {{ compliance_notes }}
 
 mode: single
 max_exceeded: silent
