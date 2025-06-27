@@ -7,7 +7,7 @@ Thank you for your interest in contributing to the Adaptive Climate Blueprint pr
 ### Prerequisites
 - Home Assistant Core 2023.4+
 - Basic understanding of YAML and Home Assistant automations
-- Knowledge of ASHRAE 55 or EN 16798-1 standards (helpful but not required)
+- Knowledge of ASHRAE 55 standards (helpful but not required)
 
 ### Development Environment
 1. Fork the repository
@@ -24,7 +24,7 @@ Thank you for your interest in contributing to the Adaptive Climate Blueprint pr
 - Performance improvements
 
 ### New Blueprints
-- EN 16798-1 implementation
+- EN 16798-1 implementation (future release)
 - Multi-zone controllers
 - Advanced energy algorithms
 
@@ -132,9 +132,9 @@ Thank you for your interest in contributing to the Adaptive Climate Blueprint pr
 - Test with different unit systems
 
 ### Regional Standards
-- ASHRAE 55 (North America)
-- EN 16798-1 (Europe)
-- JIS A 1956 (Japan)
+- ASHRAE 55 (North America) - ✅ Implemented
+- EN 16798-1 (Europe) - 🔄 Future release
+- JIS A 1956 (Japan) - 🔄 Future release
 - Other regional standards welcome
 
 ## 📞 Getting Help

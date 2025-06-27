@@ -235,11 +235,11 @@ adaptive_comfort_temp: >
   {{ (beta + alpha * outdoor_temp) | round(1) }}
 ```
 
-### Integration with Other Standards
+### Future Standards Integration
 
 The implementation can be extended to support:
-- **EN 15251** (predecessor to EN 16798-1)
-- **ISO 7730** (PMV/PPD model)
+- **EN 16798-1** (European indoor air quality standards - future release)
+- **ISO 7730** (PMV/PPD model - future release)
 - **Local building codes** (custom parameters)
 
 ## 📚 References

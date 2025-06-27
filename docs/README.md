@@ -5,7 +5,7 @@ This directory contains detailed technical documentation for the Adaptive Climat
 ## 📁 Documentation Structure
 
 - `ashrae55_technical.md` - ASHRAE 55 implementation details
-- `en16798_technical.md` - EN 16798-1 standard documentation
+- `v2-enhanced-features.md` - Enhanced features documentation
 - `energy_optimization.md` - Energy saving algorithms
 - `troubleshooting.md` - Common issues and solutions
 - `api_reference.md` - Blueprint parameter reference
@@ -21,14 +21,15 @@ This directory contains detailed technical documentation for the Adaptive Climat
 - [Energy Optimization](energy_optimization.md) - Efficiency algorithms
 
 ### For Standards Compliance
-- [EN 16798-1 Technical](en16798_technical.md) - European standard details
+- [ASHRAE 55 Technical](ashrae55_technical.md) - North American standard details
+- [CBE Tool Validation](../validation/cbe-tool-comparison.md) - Scientific validation
 
 ## 🔬 Research & Validation
 
 ### Academic References
 - ASHRAE Standard 55-2017: Thermal Environmental Conditions for Human Occupancy
-- EN 16798-1:2019: Energy performance of buildings - Ventilation for buildings
-- ISO 7730: Ergonomics of the thermal environment
+- CBE Thermal Comfort Tool: Scientific validation reference
+- ISO 7730: Ergonomics of the thermal environment (future implementation)
 
 ### Field Testing Results
 - Energy savings validation data

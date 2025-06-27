@@ -2,16 +2,14 @@
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-blue.svg)](https://www.home-assistant.io/)
 [![ASHRAE 55](https://img.shields.io/badge/ASHRAE%2055-Compliant-green.svg)](https://www.ashrae.org/technical-resources/bookstore/standard-55-thermal-environmental-conditions-for-human-occupancy)
-[![EN 16798-1](https://img.shields.io/badge/EN%2016798--1-Compliant-green.svg)](https://standards.cen.eu/dyn/www/f?p=204:110:0::::FSP_PROJECT:65026&cs=132F4E79A8D65E765D2F8E3025B26CC04)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Intelligent climate control blueprints for Home Assistant implementing ASHRAE 55 adaptive comfort model and EN 16798-1 standards with energy optimization.**
+**Intelligent climate control blueprints for Home Assistant implementing ASHRAE 55 adaptive comfort model with energy optimization.**
 
 ## 🚀 Features
 
 - **🎯 Adaptive Comfort**: Dynamic comfort zones based on outdoor temperature
 - **📊 ASHRAE 55 Compliance**: Implements adaptive thermal comfort model
-- **🌍 EN 16798-1 Integration**: European indoor air quality standards
 - **⚡ Energy Optimization**: 15-30% energy savings through intelligent control
 - **🏠 SmartIR Compatible**: Works seamlessly with existing SmartIR setups
 - **🌬️ Natural Ventilation**: Automatic detection of free cooling opportunities
@@ -128,7 +126,7 @@ automation:
   - SmartIR integration
 
 ### Coming Soon
-- **EN 16798-1 Air Quality** - European air quality standards
+- **EN 16798-1 Air Quality** - European air quality standards (future release)
 - **Energy Optimizer** - Advanced energy saving algorithms
 - **Multi-Zone Controller** - Whole-house coordination
 
@@ -170,10 +168,10 @@ Adjust comfort tolerances based on your preferences:
 - 80% and 90% acceptability limits
 - Seasonal and daily adaptations
 
-### EN 16798-1:2019 Compliance
-- Indoor air quality categories
-- Energy performance considerations
-- Comfort parameter optimization
+### Future Standards (Planned)
+- **EN 16798-1:2019**: European indoor air quality standards (future release)
+- **Energy performance**: Advanced optimization algorithms
+- **Multi-zone comfort**: Whole-house coordination
 
 ## 🤝 Contributing
 
@@ -192,7 +190,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **ASHRAE** for the adaptive comfort standard
-- **CEN** for EN 16798-1 standards
+- **CBE (Center for the Built Environment)** for the thermal comfort tool
 - **SmartIR** community for HVAC integration
 - **Home Assistant** for the amazing platform
 
