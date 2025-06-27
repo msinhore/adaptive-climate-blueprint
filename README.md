@@ -104,12 +104,12 @@ Instead of keeping your AC at a fixed temperature (like 22°C all year), this bl
 
 ## 🎯 Perfect For You If:
 
-✅ You use **SmartIR or any HA-compatible AC/heating**
-✅ You want to **save money without thinking about it**  
-✅ You're tired of **manually adjusting the thermostat**
-✅ You like **"set it and forget it" automation**
-✅ You want **ASHRAE 55 adaptive comfort standards** (not just guessing)
-✅ You prefer **flexible sensor options** (physical, weather, or manual input)
+- You use **SmartIR or any HA-compatible AC/heating**
+- You want to **save money without thinking about it**
+- You're tired of **manually adjusting the thermostat**
+- You like **"set it and forget it" automation**
+- You want **ASHRAE 55 adaptive comfort standards** (not just guessing)
+- You prefer **flexible sensor options** (physical, weather, or manual input)
 
 ❌ **Not for you if**: You prefer manual control or don't have any temperature sensors
 
