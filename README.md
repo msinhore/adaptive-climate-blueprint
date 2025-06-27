@@ -38,17 +38,16 @@
 ### Installation:
 
 1. **Import This Blueprint**
-   ```
-   https://github.com/msinhore/adaptive-climate-blueprint/blob/main/blueprints/ashrae55_adaptive_comfort_v2.yaml
-   ```
 
-2. **Create Automation**
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmsinhore%2Fadaptive-climate-blueprint%2Fblob%2Fmain%2Fblueprints%2Fashrae55_adaptive_comfort.yaml)
+
+3. **Create Automation**
    - Go to Settings → Automations → Blueprints
    - Find "Smart Thermostat" blueprint
    - Fill in your AC device and temperature sensor
    - Done!
 
-3. **Start Saving Money! 💰**
+4. **Start Saving Money! 💰**
 
 ## ⚙️ Simple Configuration
 
