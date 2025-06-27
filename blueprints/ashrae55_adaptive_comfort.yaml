@@ -6,19 +6,11 @@ blueprint:
     This blueprint dynamically adjusts comfort zones based on outdoor temperature, provides 15-30% energy savings,
     and works seamlessly with SmartIR and other climate platforms.
     
-    Features:
-    - Adaptive thermal comfort zones
-    - Natural ventilation detection
-    - Occupancy-aware setbacks
-    - Energy optimization
-    - SmartIR integration
-    
   domain: automation
   author: Marco Sinhoreli
   source_url: https://github.com/msinhore/adaptive-climate-blueprint
   
   input:
-    # Required inputs
     climate_entity:
       name: Climate Entity
       description: The climate device to control (SmartIR, generic thermostat, etc.)
@@ -42,11 +34,10 @@ blueprint:
           domain: sensor
           device_class: temperature
     
-    # Optional inputs
     occupancy_sensor:
       name: Occupancy Sensor (Optional)
       description: Motion or presence sensor for occupancy-aware control
-      default: {}
+      default: ""
       selector:
         entity:
           domain: binary_sensor
@@ -132,7 +123,11 @@ blueprint:
           unit_of_measurement: "°C"
 
 variables:
-  # Comfort category tolerances (°C)
+  climate_entity_id: !input climate_entity
+  indoor_sensor_id: !input indoor_temp_sensor
+  outdoor_sensor_id: !input outdoor_temp_sensor
+  occupancy_sensor_id: !input occupancy_sensor
+  
   comfort_tolerance: >
     {% if comfort_category == "I" %}
       2.0
@@ -142,32 +137,25 @@ variables:
       4.0
     {% endif %}
   
-  # ASHRAE 55 adaptive comfort temperature calculation
-  outdoor_temp: "{{ states(outdoor_temp_sensor) | float(20) }}"
+  outdoor_temp: "{{ states(outdoor_sensor_id) | float(20) }}"
+  indoor_temp: "{{ states(indoor_sensor_id) | float(20) }}"
   
-  # Adaptive comfort temperature: T_comfort = 18.9 + 0.255 × T_outdoor
   adaptive_comfort_temp: >
     {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
   
-  # Comfort zone bounds
   comfort_temp_min: >
     {{ [adaptive_comfort_temp - comfort_tolerance, min_comfort_temp] | max | round(1) }}
   
   comfort_temp_max: >
     {{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp] | min | round(1) }}
   
-  # Current indoor temperature
-  indoor_temp: "{{ states(indoor_temp_sensor) | float(20) }}"
-  
-  # Occupancy status
   is_occupied: >
-    {% if occupancy_sensor %}
-      {{ is_state(occupancy_sensor, 'on') }}
+    {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
+      {{ is_state(occupancy_sensor_id, 'on') }}
     {% else %}
       true
     {% endif %}
   
-  # Natural ventilation availability
   natural_ventilation_available: >
     {% if natural_ventilation_enable %}
       {{ (outdoor_temp >= (indoor_temp - natural_ventilation_threshold)) and 
@@ -178,17 +166,14 @@ variables:
       false
     {% endif %}
   
-  # Target temperature calculation
   target_temp: >
     {% if not is_occupied and energy_save_mode %}
-      {# Setback mode when unoccupied #}
       {% if indoor_temp > comfort_temp_max %}
         {{ (comfort_temp_max + setback_temperature_offset) | round(1) }}
       {% else %}
         {{ (comfort_temp_min - setback_temperature_offset) | round(1) }}
       {% endif %}
     {% else %}
-      {# Normal occupied mode #}
       {% if indoor_temp < comfort_temp_min %}
         {{ comfort_temp_min | round(1) }}
       {% elif indoor_temp > comfort_temp_max %}
@@ -201,44 +186,32 @@ variables:
 trigger:
   - platform: time_pattern
     minutes: 0
-    id: "scheduled_update"
   - platform: time_pattern
     minutes: 10
-    id: "scheduled_update"
   - platform: time_pattern
     minutes: 20
-    id: "scheduled_update"
   - platform: time_pattern
     minutes: 30
-    id: "scheduled_update"
   - platform: time_pattern
     minutes: 40
-    id: "scheduled_update"
   - platform: time_pattern
     minutes: 50
-    id: "scheduled_update"
   
   - platform: state
     entity_id: !input indoor_temp_sensor
-    id: "indoor_temp_change"
   
   - platform: state
     entity_id: !input outdoor_temp_sensor
-    id: "outdoor_temp_change"
   
   - platform: state
     entity_id: !input occupancy_sensor
-    id: "occupancy_change"
-    to:
-      - "on"
-      - "off"
 
 condition:
   - condition: template
     value_template: >
-      {{ states(climate_entity) not in ['unavailable', 'unknown'] and
-         states(indoor_temp_sensor) not in ['unavailable', 'unknown'] and
-         states(outdoor_temp_sensor) not in ['unavailable', 'unknown'] }}
+      {{ states(climate_entity_id) not in ['unavailable', 'unknown'] and
+         states(indoor_sensor_id) not in ['unavailable', 'unknown'] and
+         states(outdoor_sensor_id) not in ['unavailable', 'unknown'] }}
 
 action:
   - choose:
@@ -263,7 +236,6 @@ action:
           - condition: template
             value_template: "{{ not natural_ventilation_available }}"
         sequence:
-          # Determine HVAC mode based on temperature needs
           - choose:
               # Heating needed
               - conditions:
@@ -309,7 +281,6 @@ action:
                     data:
                       temperature: "{{ target_temp }}"
           
-          # Log the action
           - service: logbook.log
             data:
               name: "ASHRAE 55 Adaptive Climate"
