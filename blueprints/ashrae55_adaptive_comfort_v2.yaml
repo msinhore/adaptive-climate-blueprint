@@ -308,9 +308,9 @@ variables:
   base_adaptive_comfort_temp: >
     {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
   
-  # ASHRAE 55 outdoor temperature validation (10-33.5°C range)
+  # ASHRAE 55 outdoor temperature validation (10-40°C range with extrapolation warning)
   outdoor_temp_valid: >
-    {{ outdoor_temp >= 10 and outdoor_temp <= 33.5 }}
+    {{ outdoor_temp >= 10 and outdoor_temp <= 40 }}
   
   adaptive_comfort_temp: >
     {% if outdoor_temp_valid %}
@@ -421,8 +421,10 @@ variables:
   # ASHRAE 55 compliance notes
   compliance_notes: >
     {% set notes = [] %}
-    {% if outdoor_temp < 10 or outdoor_temp > 33.5 %}
-      {% set notes = notes + ["Outdoor temp outside ASHRAE 55 range (10-33.5°C): " + outdoor_temp|string + "°C"] %}
+    {% if outdoor_temp < 10 or outdoor_temp > 40 %}
+      {% set notes = notes + ["Outdoor temp outside valid range (10-40°C): " + outdoor_temp|string + "°C"] %}
+    {% elif outdoor_temp > 33.5 %}
+      {% set notes = notes + ["Outdoor temp above ASHRAE 55 standard range (10-33.5°C): " + outdoor_temp|string + "°C - using extrapolation"] %}
     {% endif %}
     {% if operative_temp <= 25 and air_velocity_val > 0.3 %}
       {% set notes = notes + ["Air velocity cooling only applies above 25°C operative temp"] %}
@@ -484,18 +486,18 @@ action:
             value_template: "{{ not natural_ventilation_available }}"
         sequence:
           - choose:
-              # Heating needed
+              # Heating needed - indoor temp below comfort zone
               - conditions:
                   - condition: template
                     value_template: "{{ indoor_temp < comfort_temp_min }}"
                 sequence:
-                  - condition: template
-                    value_template: "{{ hvac_mode_needs_change }}"
+                  # Always set heating mode when indoor temp is below comfort zone
                   - service: climate.set_hvac_mode
                     target:
                       entity_id: !input climate_entity
                     data:
                       hvac_mode: heat
+                  # Set temperature if needed
                   - condition: template
                     value_template: "{{ temperature_needs_change }}"
                   - service: climate.set_temperature
@@ -512,18 +514,18 @@ action:
                     data:
                       fan_mode: "low"
               
-              # Cooling needed
+              # Cooling needed - indoor temp above comfort zone
               - conditions:
                   - condition: template
                     value_template: "{{ indoor_temp > comfort_temp_max }}"
                 sequence:
-                  - condition: template
-                    value_template: "{{ hvac_mode_needs_change }}"
+                  # Always set cooling mode when indoor temp is above comfort zone
                   - service: climate.set_hvac_mode
                     target:
                       entity_id: !input climate_entity
                     data:
                       hvac_mode: cool
+                  # Set temperature if needed
                   - condition: template
                     value_template: "{{ temperature_needs_change }}"
                   - service: climate.set_temperature
@@ -540,20 +542,100 @@ action:
                     data:
                       fan_mode: "{{ optimal_fan_speed }}"
               
-              # Within comfort zone - maintain current mode but adjust temperature only if needed
+              # Within comfort zone - ASHRAE 55 compliant intelligent mode selection
               - conditions:
                   - condition: template
                     value_template: >
                       {{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max }}
                 sequence:
-                  - condition: template
-                    value_template: "{{ temperature_needs_change }}"
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      temperature: "{{ target_temp }}"
-                  # Set optimal fan speed only if needed
+                  - choose:
+                      # ASHRAE 55 natural ventilation opportunity: outdoor > comfort_min > indoor
+                      - conditions:
+                          - condition: template
+                            value_template: >
+                              {{ outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp }}
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              hvac_mode: fan_only
+                          - service: climate.set_fan_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              fan_mode: "medium"
+                      
+                      # ASHRAE 55 natural ventilation opportunity: outdoor < comfort_max < indoor
+                      - conditions:
+                          - condition: template
+                            value_template: >
+                              {{ outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp }}
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              hvac_mode: fan_only
+                          - service: climate.set_fan_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              fan_mode: "low"
+                      
+                      # Within comfort zone but outdoor significantly warmer - minimal cooling
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ (outdoor_temp - indoor_temp) > 3 }}"
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              hvac_mode: cool
+                          - condition: template
+                            value_template: "{{ temperature_needs_change }}"
+                          - service: climate.set_temperature
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              temperature: "{{ target_temp }}"
+                      
+                      # Within comfort zone but outdoor significantly cooler - minimal heating
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ (indoor_temp - outdoor_temp) > 3 }}"
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              hvac_mode: heat
+                          - condition: template
+                            value_template: "{{ temperature_needs_change }}"
+                          - service: climate.set_temperature
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              temperature: "{{ target_temp }}"
+                      
+                      # Default: within comfort zone, maintain with auto mode (ASHRAE 55 compliant)
+                      - conditions: []
+                        sequence:
+                          - service: climate.set_hvac_mode
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              hvac_mode: auto
+                          - condition: template
+                            value_template: "{{ temperature_needs_change }}"
+                          - service: climate.set_temperature
+                            target:
+                              entity_id: !input climate_entity
+                            data:
+                              temperature: "{{ adaptive_comfort_temp }}"
+                  
+                  # Set optimal fan speed only if needed for comfort zone scenarios
                   - condition: template
                     value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
                   - service: climate.set_fan_mode
@@ -566,12 +648,11 @@ action:
             data:
               name: "ASHRAE 55 Adaptive Climate"
               message: >
-                Climate {% if hvac_mode_needs_change or temperature_needs_change or fan_mode_needs_change %}adjusted{% else %}checked (no changes needed){% endif %}. 
+                ASHRAE 55 compliant climate control applied. 
                 Target: {{ target_temp }}°C (Current: {{ current_temperature }}°C),
-                Indoor: {{ indoor_temp }}°C (Air: {{ indoor_air_temp }}°C{% if use_operative_temperature_val %}, Radiant: {{ mean_radiant_temp }}°C{% endif %}),
-                Outdoor: {{ outdoor_temp }}°C, Humidity: {{ indoor_humidity }}%,
-                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C,
-                HVAC Mode: {{ current_hvac_mode }}{% if hvac_mode_needs_change %} (change needed){% endif %},
+                Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C,
+                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C (adaptive temp: {{ adaptive_comfort_temp }}°C),
+                HVAC Mode: {% if indoor_temp < comfort_temp_min %}HEAT (below comfort zone){% elif indoor_temp > comfort_temp_max %}COOL (above comfort zone){% elif outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp %}FAN (natural ventilation opportunity){% elif outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp %}FAN (natural ventilation opportunity){% elif (outdoor_temp - indoor_temp) > 3 %}COOL (outdoor >>3°C warmer){% elif (indoor_temp - outdoor_temp) > 3 %}HEAT (outdoor >>3°C cooler){% else %}AUTO (within comfort zone){% endif %} (was {{ current_hvac_mode }}),
                 Occupancy: {{ 'Occupied' if is_occupied else 'Unoccupied' }},
                 Category: {{ comfort_category_val }} (±{{ comfort_tolerance }}°C),
                 {% if comfort_precision_mode_val %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{ humidity_offset }}°C,{% endif %}
