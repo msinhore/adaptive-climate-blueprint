@@ -41,7 +41,7 @@ blueprint:
     occupancy_sensor:
       name: Occupancy Sensor (Optional)
       description: Motion or presence sensor for occupancy-aware control
-      default: ""
+      default: 
       selector:
         entity:
           domain: binary_sensor
@@ -452,9 +452,6 @@ trigger:
   
   - platform: state
     entity_id: !input outdoor_temp_sensor
-  
-  - platform: state
-    entity_id: !input occupancy_sensor
 
 condition:
   - condition: template
