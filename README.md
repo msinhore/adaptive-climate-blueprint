@@ -71,6 +71,15 @@ outdoor_temp_sensor: weather.home                   # Built-in weather (free)
 - **Manual input**: Create input_number entities for manual temperature/humidity override
 - **Flexible setup**: Mix and match sensor types as needed
 
+### HVAC Mode Configuration:
+**Important**: This blueprint only adjusts temperature setpoints - it does not automatically switch between heating/cooling modes.
+
+**Recommended Setup**:
+- **Best practice**: Set your AC to "Auto" mode for seasonal operation
+- **Manual control**: You can manually select Heat, Cool, or Dry modes directly on your AC as desired
+- **Seasonal changes**: Expected to manually adjust mode when transitioning between seasons
+- **Manufacturer offsets**: Some ACs (like Daikin) apply internal offsets in heat mode - see FAQ for workarounds
+
 ### What It Does Automatically:
 - **🌡️ Calculates optimal temperature** based on ASHRAE 55 adaptive comfort model
 - **⚡ Saves energy** when you're away (if you have motion sensors)
@@ -222,6 +231,12 @@ Yes! v2 supports weather services (OpenWeatherMap, Open-Meteo, etc.) so you don'
 
 ### "My AC beeps every time - can this be fixed?"
 Yes! v2 includes smart state management that only sends commands when settings actually need to change. No more unnecessary beeps in bedrooms!
+
+### "My Daikin AC has a +2°C offset in heat mode - how do I handle this?"
+Some manufacturers (like Daikin) apply internal offsets. Create a template sensor to compensate: if heat mode, subtract 2°C from the ASHRAE target before sending to your AC. This keeps ASHRAE calculations accurate while working with manufacturer quirks.
+
+### "Does the blueprint automatically switch between heating and cooling?"
+No - it only adjusts temperature setpoints. You should manually set your AC to "Auto" mode for seasonal operation, or manually select Heat/Cool/Dry modes as desired. This gives you control while the blueprint handles optimal temperatures.
 
 ## 📚 Documentation & Setup Guides
 
