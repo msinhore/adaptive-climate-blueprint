@@ -686,11 +686,25 @@ variables:
   window_door_open_detected: >
     {% if window_open_detection_val and previous_temp_helper_id and previous_temp_helper_id != "" %}
       {% set temp_change = (previous_indoor_temp - indoor_temp) | abs %}
-      {% set temp_diff = previous_indoor_temp != indoor_temp %}
+      {% set temp_diff_exists = previous_indoor_temp != indoor_temp %}
       {% set meaningful_change = temp_change >= window_open_temp_change_val %}
-      {% if meaningful_change and temp_diff %}
-        {# Rapid temperature change detected #}
-        true
+      {% set temp_drop = previous_indoor_temp - indoor_temp %}
+      {% set temp_rise = indoor_temp - previous_indoor_temp %}
+      
+      {# Debug values for troubleshooting #}
+      {% set debug_info = "Previous: " + previous_indoor_temp|string + "°C, Current: " + indoor_temp|string + "°C, Change: " + temp_change|string + "°C, Threshold: " + window_open_temp_change_val|string + "°C" %}
+      
+      {% if meaningful_change and temp_diff_exists %}
+        {# Detect both drops (winter) and rises (summer) #}
+        {% if temp_drop >= window_open_temp_change_val %}
+          {# Temperature drop detected - cold air entering (winter scenario) #}
+          true
+        {% elif temp_rise >= window_open_temp_change_val %}
+          {# Temperature rise detected - warm air entering (summer scenario) #}
+          true
+        {% else %}
+          false
+        {% endif %}
       {% else %}
         false
       {% endif %}
@@ -1145,6 +1159,10 @@ action:
         (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
         Window detection: {{ 'ON' if window_open_detection_val else 'OFF' }}
         {% if window_open_detection_val %}(threshold: {{ window_open_temp_change_val }}°C){% endif %}
+        Detection result: {{ 'TRIGGERED' if window_door_open_detected else 'NO CHANGE' }}
+        {% if window_open_detection_val %}
+        Drop: {{ (previous_indoor_temp - indoor_temp) | round(2) }}°C, Rise: {{ (indoor_temp - previous_indoor_temp) | round(2) }}°C
+        {% endif %}
 
 mode: single
 max_exceeded: silent
