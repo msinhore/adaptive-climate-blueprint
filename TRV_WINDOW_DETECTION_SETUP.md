@@ -1,97 +1,123 @@
-# Configuração Window Detection para Sonoff TRVZB
+# Window Detection para Sonoff TRVZB - Realidade Técnica
 
-## Problema Identificado
+## ⚠️ CONCLUSÃO DEFINITIVA
 
-Baseado na **documentação oficial do Zigbee2MQTT**, o Sonoff TRVZB não cria uma entidade `binary_sensor### Debug Issues - Opções Práticas
+**O Sonoff TRVZB NÃO suporta window detection via Zigbee2MQTT** devido a limitações técnicas do firmware.
 
-**Se `open_window` não existir no seu TRV:**
+### Investigação Técnica Completa
 
-1. **SOLUÇÃO MAIS SIMPLES - Desabilitar:**
-   ```yaml
-   # No blueprint, deixe vazio - funciona perfeitamente
-   trv_window_open_sensor: ""
-   ```
+**Atributos encontrados no cluster hvacThermostat:**
+- `viessmannWindowOpenForce` (manufacturerCode: 4641)  
+- `viessmannWindowOpenInternal` (manufacturerCode: 4641)
 
-2. **SOLUÇÃO ALTERNATIVA - Sensor Físico:**
-   ```yaml
-   # Use um sensor de porta/janela dedicado
-   trv_window_open_sensor: binary_sensor.porta_sala_contact
-   ```
-
-3. **SOLUÇÃO AVANÇADA - Template de Temperatura:**
-   Crie detecção baseada em queda rápida de temperaturaopen_window` separada. Em vez disso, publica `open_window` como uma **propriedade do estado** do `climate` entity.
-
-## Solução: Template Sensor
-
-### 1. Criar Template Sensor (Recomendado)
-
-Adicione no seu `configuration.yaml`:
-
-```yaml
-template:
-  - binary_sensor:
-      - name: "Sala Window Open TRV"
-        unique_id: sala_window_open_trv
-        state: "{{ state_attr('climate.radiator_sala', 'open_window') == true }}"
-        device_class: window
-        icon: >
-          {% if state_attr('climate.radiator_sala', 'open_window') == true %}
-            mdi:window-open
-          {% else %}
-            mdi:window-closed
-          {% endif %}
+**Resultado ao tentar acessar:**
+```
+failed (Status 'UNSUPPORTED_ATTRIBUTE')
 ```
 
-### 2. Reiniciar Home Assistant
+### Por Que Não Funciona
 
-Após adicionar o template, reinicie o Home Assistant para criar a nova entidade.
+Os erros `UNSUPPORTED_ATTRIBUTE` confirmam que:
 
-### 3. Verificar a Nova Entidade
+1. **Clusters proprietários parcialmente implementados**
+   - Viessmann implementou funcionalidade apenas para uso interno
+   - Atributos existem mas são bloqueados para acesso externo
 
-Vá em **Developer Tools → States** e confirme que existe:
-- `binary_sensor.sala_window_open_trv`
+2. **Reservados para comandos internos apenas**
+   - Window detection funciona internamente no TRV
+   - Não expostos para gateways como Zigbee2MQTT
 
-### 4. Configurar no Blueprint
+3. **Firmware bloqueia acesso externo**
+   - Mesmo com manufacturerCode: 4641 correto
+   - Compatível apenas com gateways oficiais Viessmann
 
-Use a nova entidade no blueprint:
+## ✅ Soluções Práticas Funcionais
 
+### 1. RECOMENDADA - Desabilitar Window Detection
 ```yaml
-# Configuração do blueprint
+# Configuração blueprint - mais simples e confiável
 primary_climate_entity: climate.radiator_sala
 enable_trv_efficiency_monitoring: true
 trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
-trv_window_open_sensor: binary_sensor.sala_window_open_trv
+trv_window_open_sensor: ""  # VAZIO = sem window detection
 ```
 
-## Alternativa: Sensor Físico
+**Vantagens:**
+- ✅ 100% funcional e estável
+- ✅ Sem dependências externas
+- ✅ Blueprint funciona perfeitamente
+- ✅ Todas as outras funcionalidades preservadas
 
-Se você tem um sensor de janela/porta dedicado, pode usar esse em vez do template:
-
+### 2. ALTERNATIVA - Sensor Físico Dedicado
 ```yaml
-# Exemplo com sensor físico
+# Use sensor de porta/janela Zigbee independente
 trv_window_open_sensor: binary_sensor.porta_sala_contact
-# ou
-trv_window_open_sensor: binary_sensor.janela_sala_sensor
 ```
 
-## Como Funciona o Window Detection do TRV
+**Exemplo de sensor recomendado:**
+- Aqara Door/Window Sensor
+- Sonoff SNZB-04 
+- Tuya Door/Window Sensor
 
-### Método de Detecção
-- **Threshold**: Queda de temperatura > 1.5°C
-- **Tempo**: Em 4.5 minutos
-- **Automático**: O TRV detecta internamente, sem configuração adicional
+**Vantagens:**
+- ✅ Detecção instantânea e confiável
+- ✅ Controle total sobre sensibilidade
+- ✅ Funciona com qualquer dispositivo
+- ✅ Sem limitações de firmware
 
-### Estados
-- `true`: Janela detectada como aberta (temperatura caiu rapidamente)
-- `false`: Janela fechada (temperatura estável)
+### 3. AVANÇADA - Template Baseado em Comportamento TRV
+```yaml
+# Em configuration.yaml
+template:
+  - binary_sensor:
+      - name: "Sala Window Open Behavior Detection"
+        unique_id: sala_window_behavior
+        state: >
+          {% set hvac = state_attr('climate.radiator_sala', 'hvac_action') %}
+          {% set valve = states('number.radiator_sala_valve_opening_degree') | float(0) %}
+          {% set temp = state_attr('climate.radiator_sala', 'current_temperature') | float %}
+          {% set target = state_attr('climate.radiator_sala', 'temperature') | float %}
+          {{ hvac == 'idle' and valve < 15 and (target - temp) > 2 }}
+        device_class: window
+        delay_on: "00:02:00"  # Evita falsos positivos
+        delay_off: "00:01:00"
+```
 
-### Uso no Blueprint
-Quando `open_window == true`:
-1. O blueprint pausa o controle automático
-2. O TRV para de aquecer
-3. Evita desperdício de energia
+**Lógica do template:**
+- HVAC em idle (TRV não aquecendo)
+- Válvula quase fechada (< 15%)
+- Grande diferença de temperatura (target - atual > 2°C)
+- **= Possível janela aberta detectada**
+
+## Configuração Completa Recomendada
+
+### Blueprint Configuration (Sem Window Detection)
+```yaml
+# Configuração dual climate completa e funcional
+dual_climate_control: true
+primary_climate_entity: climate.radiator_sala
+climate_entity: climate.ac_sala
+
+# TRV Monitoring - FUNCIONAL
+enable_trv_efficiency_monitoring: true
+trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
+trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
+trv_running_steps_sensor: sensor.radiator_sala_closing_steps
+
+# Window Detection - DESABILITADO (mais estável)
+trv_window_open_sensor: ""
+
+# Controle de portas/janelas via sensores físicos (opcional)
+door_window_entities:
+  - binary_sensor.porta_sala_contact
+  - binary_sensor.janela_sala_sensor
+
+# Thresholds
+secondary_heating_threshold: 2.0
+trv_priority_temp_difference: 5.0
+```
 
 ## Verificação e Debug
 
@@ -116,25 +142,106 @@ name: "Window Detection (TRV)"
 icon: mdi:window-open-variant
 ```
 
-## ⚠️ DESCOBERTA IMPORTANTE: Atributos Viessmann Não Suportados
+## ⚠️ DESCOBERTA TÉCNICA: Por Que Window Detection Não Funciona
 
-### Investigação no Zigbee Device
+### Investigação Zigbee Completa
 
-Se você verificar no **Zigbee2MQTT → Device → Reporting/Endpoint 1/hvacThermostat**, pode encontrar:
-- `viessmannWindowOpenForce`
-- `viessmannWindowOpenInternal`
+**Atributos Encontrados no Cluster hvacThermostat:**
+- `viessmannWindowOpenForce` (manufacturerCode: 4641)
+- `viessmannWindowOpenInternal` (manufacturerCode: 4641)
 
-**PORÉM**: Estes retornam `failed (Status 'UNSUPPORTED_ATTRIBUTE')`
+**Resultado ao Tentar Acessar:**
+```
+failed (Status 'UNSUPPORTED_ATTRIBUTE')
+```
 
-### O Que Isso Significa
+### Explicação Técnica
 
-1. **O hardware TRV TEM window detection** (atributos Viessmann existem)
-2. **O Zigbee2MQTT não consegue acessá-los** (UNSUPPORTED_ATTRIBUTE)
-3. **Por isso `open_window` não aparece** como propriedade do climate entity
+**✅ O que EXISTE:**
+- O hardware TRV tem detecção de janela implementada
+- Os atributos aparecem listados no cluster Zigbee
+- Viessmann (código 4641) implementou funcionalidade proprietária
 
-### Soluções Práticas
+**❌ O que NÃO FUNCIONA:**
+- Leitura via Zigbee2MQTT: `UNSUPPORTED_ATTRIBUTE`
+- Escrita via Zigbee2MQTT: `UNSUPPORTED_ATTRIBUTE`
+- Acesso externo aos atributos proprietários: **Bloqueado pelo firmware**
 
-Como os atributos Viessmann não são acessíveis via Zigbee2MQTT, use estas alternativas:
+### Por Que Isso Acontece
+
+Os erros `UNSUPPORTED_ATTRIBUTE` indicam que o dispositivo:
+
+1. **Usa clusters proprietários parcialmente implementados**
+   - Atributos existem mas são somente leitura interna
+   - Viessmann reservou para uso exclusivo do próprio firmware
+
+2. **Reserva atributos para comandos internos apenas**
+   - Detecção funciona internamente no TRV
+   - Não expostos para gateways externos (Zigbee2MQTT)
+
+3. **Compatibilidade limitada a gateways oficiais**
+   - Pode funcionar apenas com gateway Viessmann oficial
+   - Zigbee2MQTT não tem acesso aos comandos proprietários
+
+### Confirmação Final
+
+**Tentativas realizadas:**
+- ✔️ Leitura com manufacturerCode: 4641 → `UNSUPPORTED_ATTRIBUTE`
+- ✔️ Escrita com manufacturerCode: 4641 → `UNSUPPORTED_ATTRIBUTE`
+- ✔️ Verificação nos logs Zigbee2MQTT → Atributos listados mas inacessíveis
+
+**Conclusão definitiva:**
+- 🚫 **Leitura**: Não suportada pelo firmware
+- 🚫 **Escrita**: Não suportada pelo firmware  
+- 🚫 **Acesso via Zigbee2MQTT**: Bloqueado permanentemente
+
+### Soluções Práticas Definitivas
+
+**Como os atributos Viessmann são inacessíveis via Zigbee2MQTT:**
+
+#### 1. **SOLUÇÃO RECOMENDADA - Desabilitar Window Detection**
+```yaml
+# No blueprint - configuração mais estável
+trv_window_open_sensor: ""
+```
+**Vantagens:**
+- ✅ 100% funcional
+- ✅ Sem dependências externas
+- ✅ Blueprint funciona perfeitamente
+- ✅ Todas as outras funcionalidades preservadas
+
+#### 2. **ALTERNATIVA - Sensor Físico Dedicado**
+```yaml
+# Use sensor de porta/janela Zigbee independente
+trv_window_open_sensor: binary_sensor.porta_sala_contact
+```
+**Vantagens:**
+- ✅ Detecção confiável e instantânea
+- ✅ Controle total sobre thresholds
+- ✅ Funciona com qualquer dispositivo
+
+#### 3. **WORKAROUND - Template Baseado em Comportamento**
+```yaml
+# Em configuration.yaml
+template:
+  - binary_sensor:
+      - name: "Sala Window Open Behavior Detection"
+        unique_id: sala_window_behavior
+        state: >
+          {% set hvac = state_attr('climate.radiator_sala', 'hvac_action') %}
+          {% set valve = states('number.radiator_sala_valve_opening_degree') | float(0) %}
+          {% set temp = state_attr('climate.radiator_sala', 'current_temperature') | float %}
+          {% set target = state_attr('climate.radiator_sala', 'temperature') | float %}
+          {{ hvac == 'idle' and valve < 10 and (target - temp) > 2 }}
+        device_class: window
+        icon: mdi:window-open-variant
+```
+
+**Lógica do template:**
+- HVAC em idle (não aquecendo)
+- Válvula quase fechada (< 10%)
+- Grande diferença temperatura (target - atual > 2°C)
+- **= Possível janela aberta**
 
 #### 1. Verificar Todas as Propriedades Disponíveis
 

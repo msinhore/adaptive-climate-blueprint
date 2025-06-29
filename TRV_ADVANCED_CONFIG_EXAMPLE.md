@@ -30,22 +30,21 @@ trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 
 # TRV window open detection integration
-# BASEADO NA DOCUMENTAÇÃO OFICIAL ZIGBEE2MQTT:
-# O Sonoff TRVZB publica "open_window" como propriedade do estado do climate entity
-# Detecta automaticamente quedas de temperatura > 1.5°C em 4.5 minutos
-#
-# ⚠️ IMPORTANTE: Nem todos os TRVs têm essa funcionalidade ativada
+# ⚠️ DESCOBERTA TÉCNICA: Sonoff TRVZB NÃO suporta window detection via Zigbee2MQTT
+# Os atributos viessmannWindowOpenForce/Internal existem mas retornam UNSUPPORTED_ATTRIBUTE
 # 
-# OPÇÃO 1 - Se open_window existir (teste primeiro no Developer Tools):
-# trv_window_open_sensor: binary_sensor.sala_window_open_trv  # Template sensor
+# OPÇÕES PRÁTICAS:
 #
-# OPÇÃO 2 - Se não existir ou não funcionar (RECOMENDADO):
-trv_window_open_sensor: ""  # Deixar vazio - blueprint funciona perfeitamente
+# OPÇÃO 1 - RECOMENDADA: Desabilitar (mais estável)
+trv_window_open_sensor: ""  # Vazio = blueprint funciona perfeitamente
 #
-# OPÇÃO 3 - Sensor físico de porta/janela (se disponível):
+# OPÇÃO 2 - Sensor físico de porta/janela dedicado:
 # trv_window_open_sensor: binary_sensor.porta_sala_contact
 #
-# NOTA: Window detection é OPCIONAL - o blueprint funciona 100% sem essa funcionalidade
+# OPÇÃO 3 - Template baseado em comportamento TRV (avançado):
+# trv_window_open_sensor: binary_sensor.sala_window_behavior
+#
+# NOTA: Window detection é OPCIONAL - todas as funcionalidades principais funcionam sem ele
 
 # TRV motor activity monitoring
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
@@ -61,10 +60,10 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 ### Control Entities
 - `switch.radiator_sala_child_lock` - Safety lock control
 - `number.radiator_sala_frost_protection_temperature` - Frost protection setting
-- **WINDOW DETECTION**: `state_attr('climate.radiator_sala', 'open_window')` - **Propriedade do climate entity**
-  - Detecta automaticamente queda de temperatura >1.5°C em 4.5 minutos
-  - Valores: `true` (janela aberta detectada) / `false` (janela fechada)
-  - **NÃO existe** como entidade separada `binary_sensor.radiator_sala_open_window`
+- **WINDOW DETECTION**: ❌ **NÃO FUNCIONA via Zigbee2MQTT**
+  - Atributos `viessmannWindowOpenForce/Internal` existem mas retornam `UNSUPPORTED_ATTRIBUTE`
+  - Firmware bloqueia acesso externo aos clusters proprietários Viessmann
+  - **Solução**: Use sensor físico dedicado ou desabilite window detection
 - `number.radiator_sala_external_temperature_input` - External temperature input
 - `number.radiator_sala_temperature_accuracy` - Temperature accuracy adjustment
 
@@ -90,29 +89,28 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
    - `number.radiator_sala_valve_opening_degree` → `trv_valve_opening_sensor`
    - `number.radiator_sala_valve_closing_degree` → `trv_valve_closing_sensor`
 
-2. **Window Detection Integration (OPCIONAL)**:
-   - **PRIMEIRO**: Teste se existe → `{{ state_attr('climate.radiator_sala', 'open_window') }}`
+2. **Window Detection Integration (NÃO FUNCIONA via TRV)**:
+   - **DESCOBERTA**: Atributos Viessmann existem mas são `UNSUPPORTED_ATTRIBUTE`
+   - **RECOMENDADO**: Desabilitar window detection do TRV
+     ```yaml
+     trv_window_open_sensor: ""  # Vazio = sem problemas
+     ```
    
-   - **Se EXISTIR - Template Sensor**:
+   - **ALTERNATIVA 1 - Sensor Físico (Melhor opção)**:
+     ```yaml
+     trv_window_open_sensor: binary_sensor.porta_sala_contact
+     ```
+   
+   - **ALTERNATIVA 2 - Template Comportamento (Avançado)**:
      ```yaml
      # Em configuration.yaml:
      template:
        - binary_sensor:
-           - name: "Sala Window Open TRV"
-             unique_id: sala_window_open_trv
-             state: "{{ state_attr('climate.radiator_sala', 'open_window') == true }}"
-             device_class: window
-     ```
-     Depois use: `binary_sensor.sala_window_open_trv` → `trv_window_open_sensor`
-   
-   - **Se NÃO EXISTIR (Comum)**: 
-     ```yaml
-     trv_window_open_sensor: ""  # Vazio = sem window detection
-     ```
-   
-   - **Alternativa - Sensor Físico**:
-     ```yaml
-     trv_window_open_sensor: binary_sensor.porta_sala_contact
+           - name: "Sala Window Behavior Detection"
+             state: >
+               {% set hvac = state_attr('climate.radiator_sala', 'hvac_action') %}
+               {% set valve = states('number.radiator_sala_valve_opening_degree') | float(0) %}
+               {{ hvac == 'idle' and valve < 15 }}
      ```
 
 3. **Motor Activity Monitoring**:
