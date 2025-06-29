@@ -1,13 +1,13 @@
-# 🌡️ ASHRAE 55 Adaptive Climate Control v2
+# 🌡️ Adaptive Climate Comfort v2
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-blue.svg)](https://www.home-assistant.io/)
 [![Energy Savings](https://img.shields.io/badge/Energy%20Savings-15--30%25-green.svg)](https://github.com/msinhore/adaptive-climate-blueprint)
-[![ASHRAE 55](https://img.shields.io/badge/ASHRAE%2055-Compliant-orange.svg)](https://www.ashrae.org/technical-resources/standards-and-guidelines/read-only-versions-of-ashrae-standards)
+[![Adaptive Comfort](https://img.shields.io/badge/Adaptive%20Comfort-Compliant-orange.svg)](https://www.ashrae.org/technical-resources/standards-and-guidelines/read-only-versions-of-ashrae-standards)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmsinhore%2Fadaptive-climate-blueprint%2Fblob%2Fmain%2Fblueprints%2Fashrae55_adaptive_comfort_v2.yaml)
 
-**Intelligent climate control implementing ASHRAE 55 adaptive comfort model. Automatically adjusts your AC/heating based on outdoor weather conditions for optimal comfort and energy savings.**
+**Intelligent climate control implementing adaptive comfort model. Automatically adjusts your AC/heating based on outdoor weather conditions for optimal comfort and energy savings.**
 
 ## 🎯 What This Does (Simple Version)
 
@@ -21,14 +21,14 @@
 - **Cool day (10°C outside)**: Sets heating to 20°C (cozy without waste)
 
 ### Bottom Line:
-**Set it once, save 15-30% on energy bills, stay comfortable year-round with ASHRAE 55 adaptive comfort standards.**
+**Set it once, save 15-30% on energy bills, stay comfortable year-round with Adaptive Comfort adaptive comfort standards.**
 
 ## ⚡ Key Benefits
 
 - **💰 Lower Bills**: 15-30% energy savings in testing, up to 50% with advanced features
 - **🔄 Fully Automatic**: No daily thermostat adjustments needed
 - **🏠 Works with SmartIR**: Compatible with existing AC/heating setups
-- **🌡️ Always Comfortable**: ASHRAE 55 adaptive comfort standards
+- **🌡️ Always Comfortable**: Adaptive Comfort adaptive comfort standards
 - **⏰ Occupancy Smart**: Saves energy when you're away
 - **🌤️ Weather Integration**: Uses free weather services (no outdoor sensors needed)
 - **🎚️ Flexible Sensors**: Supports physical sensors, weather data, or manual input
@@ -52,7 +52,7 @@
 
 3. **Create Automation**
    - Go to Settings → Automations → Blueprints
-   - Find "ASHRAE 55 Adaptive Climate Control" blueprint
+   - Find "Adaptive Comfort Adaptive Climate Control" blueprint
    - Fill in your AC device and temperature sensors
    - Choose your comfort category (I, II, or III)
    - Done!
@@ -85,7 +85,7 @@ outdoor_temp_sensor: weather.home                   # Built-in weather (free)
 - **Manufacturer offsets**: Some ACs (like Daikin) apply internal offsets in heat mode - see FAQ for workarounds
 
 ### What It Does Automatically:
-- **🌡️ Calculates optimal temperature** based on ASHRAE 55 adaptive comfort model
+- **🌡️ Calculates optimal temperature** based on Adaptive Comfort adaptive comfort model
 - **⚡ Saves energy** when you're away (if you have motion sensors)
 - **🌬️ Uses free cooling** when outside air is perfect
 - **🔄 Adjusts all day** as weather changes
@@ -104,7 +104,7 @@ outdoor_temp_sensor: weather.home                   # Built-in weather (free)
 Instead of keeping your AC at a fixed temperature (like 22°C all year), this blueprint:
 
 1. **Checks the weather outside** every few minutes
-2. **Calculates the perfect indoor temperature** using ASHRAE 55 adaptive comfort standards
+2. **Calculates the perfect indoor temperature** using Adaptive Comfort adaptive comfort standards
 3. **Automatically adjusts your thermostat** to that temperature
 4. **Saves energy** because the "perfect" temperature changes with outdoor conditions
 
@@ -121,7 +121,7 @@ Instead of keeping your AC at a fixed temperature (like 22°C all year), this bl
 - You want to **save money without thinking about it**
 - You're tired of **manually adjusting the thermostat**
 - You like **"set it and forget it" automation**
-- You want **ASHRAE 55 adaptive comfort standards** (not just guessing)
+- You want **Adaptive Comfort adaptive comfort standards** (not just guessing)
 - You prefer **flexible sensor options** (physical, weather, or manual input)
 
 ❌ **Not for you if**: You prefer manual control or don't have any temperature sensors
@@ -142,7 +142,7 @@ Instead of keeping your AC at a fixed temperature (like 22°C all year), this bl
 ### Improved Usability
 - **Auto-Detection**: All advanced features are optional and auto-detected
 - **Better Validation**: Ensures sensor data is within realistic ranges
-- **Real-time Logging**: Shows compliance with ASHRAE 55 standards
+- **Real-time Logging**: Shows compliance with Adaptive Comfort standards
 - **Smart State Management**: Only sends commands when AC settings need to change (no unnecessary beeps!)
 - **Flexible Configuration**: Start simple, add features as needed
 
@@ -213,7 +213,7 @@ outdoor_temp_sensor: input_number.outdoor_temp_override
 ## ❓ Common Questions
 
 ### "What exactly does this do that my thermostat doesn't?"
-Your thermostat keeps the same temperature year-round. This blueprint changes the target temperature based on outdoor weather using ASHRAE 55 adaptive comfort standards, which is more comfortable and uses 15-30% less energy.
+Your thermostat keeps the same temperature year-round. This blueprint changes the target temperature based on outdoor weather using Adaptive Comfort adaptive comfort standards, which is more comfortable and uses 15-30% less energy.
 
 ### "Do I need special hardware?"
 No! Works with whatever AC/heating you already have in Home Assistant (SmartIR, climate entities, etc.) plus any indoor temperature sensor. You can even use weather services instead of outdoor sensors.
@@ -249,7 +249,7 @@ No - it only adjusts temperature setpoints. You should manually set your AC to "
 - **[Weather Services Setup](examples/weather-services-setup.md)** - Using free weather data
 
 **For technical users:**
-- **[ASHRAE 55 Technical Details](docs/ashrae55_technical.md)** - Science behind the calculations
+- **[Adaptive Comfort Technical Details](docs/ashrae55_technical.md)** - Science behind the calculations
 - **[CBE Tool Validation](validation/cbe-tool-comparison.md)** - Accuracy verification
 - **[v2 Enhanced Features](docs/v2-enhanced-features.md)** - All optional settings explained
 - **[Smart State Management](docs/smart-state-management.md)** - How v2 avoids unnecessary AC commands
@@ -266,7 +266,7 @@ No - it only adjusts temperature setpoints. You should manually set your AC to "
 
 ---
 
-*This blueprint implements ASHRAE 55 adaptive comfort standards in simple, user-friendly automation. Scientifically proven comfort with no PhD required! 🎓*
+*This blueprint implements Adaptive Comfort adaptive comfort standards in simple, user-friendly automation. Scientifically proven comfort with no PhD required! 🎓*
 
 ## 📝 License
 

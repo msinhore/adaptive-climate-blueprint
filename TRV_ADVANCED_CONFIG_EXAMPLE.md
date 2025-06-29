@@ -2,7 +2,7 @@
 
 ## Complete Configuration Example
 
-Below is a complete configuration example for integrating Sonoff TRVZB with the ASHRAE 55 Adaptive Climate Blueprint's dual climate control system.
+Below is a complete configuration example for integrating Sonoff TRVZB with the Adaptive Comfort Adaptive Climate Blueprint's dual climate control system.
 
 ### Basic Dual Climate Setup
 ```yaml
@@ -190,4 +190,4 @@ sensor.radiator_sala_closing_steps
 
 ---
 
-*This configuration example demonstrates the cutting-edge integration of ASHRAE 55 adaptive comfort principles with modern TRV sensor technology for maximum efficiency and comfort.*
+*This configuration example demonstrates the cutting-edge integration of Adaptive Comfort adaptive comfort principles with modern TRV sensor technology for maximum efficiency and comfort.*

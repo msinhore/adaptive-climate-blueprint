@@ -169,7 +169,7 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 ```
 
 ### Step 5: Monitor Logs
-Check Home Assistant logbook for "ASHRAE 55 Dual Climate" entries showing decision logic.
+Check Home Assistant logbook for "Adaptive Comfort Dual Climate" entries showing decision logic.
 
 ## Troubleshooting
 
@@ -266,4 +266,4 @@ When natural ventilation is available, both devices are turned off in favor of p
 
 ---
 
-*This feature represents the cutting edge of residential HVAC optimization, combining ASHRAE 55 adaptive comfort principles with modern dual heating system coordination for maximum efficiency and comfort.*
+*This feature represents the cutting edge of residential HVAC optimization, combining Adaptive Comfort adaptive comfort principles with modern dual heating system coordination for maximum efficiency and comfort.*

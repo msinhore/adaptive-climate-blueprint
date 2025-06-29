@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-time temperature calculations (raw vs. final values)
   - Smart rounding decision tracking
   - Seasonal optimization mode indicators
-  - ASHRAE 55 compliance status reporting
+  - Adaptive Comfort compliance status reporting
   - Detailed HVAC mode decision explanations
   - Dual climate control strategy logging with efficiency metrics
 
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Natural Ventilation Detection**: Humidity-aware ventilation decisions
 - **Adaptive Fan Speed Control**: Temperature deviation-based fan optimization
 - **Energy Save Mode**: Improved setback calculations for unoccupied spaces
-- **ASHRAE 55 Compliance**: Extended temperature range validation (10-40°C)
+- **Adaptive Comfort Compliance**: Extended temperature range validation (10-40°C)
 - **Error Handling**: Robust sensor availability checking
 - **Performance**: Optimized template calculations for faster execution
 - **Entity Type Support**: Comprehensive entity domain compatibility
@@ -79,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Seasonal Detection Variables**: Automatic winter/summer/mid-season classification
 - **Enhanced Variable System**: 40+ calculated variables for precise control
 - **HVAC State Optimization**: Reduces unnecessary climate entity commands
-- **Compliance Monitoring**: Real-time ASHRAE 55 standard adherence tracking
+- **Compliance Monitoring**: Real-time Adaptive Comfort standard adherence tracking
 
 ### Energy Savings - Quantified Improvements
 - **Smart Rounding**: 5-10% additional energy savings through optimized setpoints
@@ -107,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dual Climate - Secondary Heating**: Indoor 17°C, Target 21°C (4°C difference) → Both systems activate for maximum heating capacity
 
 ### Added
-- Initial ASHRAE 55 Adaptive Comfort blueprint implementation
+- Initial Adaptive Comfort Adaptive Comfort blueprint implementation
 - SmartIR integration support
 - Natural ventilation detection
 - Occupancy-aware setbacks
@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License information
 
 ### Technical Details
-- ASHRAE 55-2017 adaptive comfort model implementation
+- Adaptive Comfort-2017 adaptive comfort model implementation
 - Template-based calculations for performance
 - Robust error handling
 - Single mode automation to prevent conflicts
@@ -143,7 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - First stable release
-- ASHRAE 55 Adaptive Comfort blueprint
+- Adaptive Comfort Adaptive Comfort blueprint
 - Full SmartIR compatibility
 - Energy saving features
 - Natural ventilation support
@@ -159,7 +159,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Presence detection sensors
 
 ### Standards Compliance
-- ASHRAE 55-2017 adaptive comfort model
+- Adaptive Comfort-2017 adaptive comfort model
 - Category I, II, III comfort levels
 - Adaptive temperature calculations
 - Energy optimization algorithms
@@ -170,7 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Pre-release Development
 - Blueprint architecture design
-- ASHRAE 55 algorithm implementation
+- Adaptive Comfort algorithm implementation
 - SmartIR integration testing
 - Energy saving validation
 - Documentation creation

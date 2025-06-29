@@ -1,7 +1,7 @@
 blueprint:
-  name: ASHRAE 55 Adaptive Climate Control
+  name: Adaptive Climate Comfort
   description: >
-    Intelligent climate control implementing ASHRAE 55 adaptive comfort model with energy optimization.
+    Intelligent climate control implementing adaptive comfort model with energy optimization.
     
     This blueprint dynamically adjusts comfort zones based on outdoor temperature, provides 15-30% energy savings,
     and works seamlessly with SmartIR and other climate platforms.
@@ -53,9 +53,9 @@ blueprint:
             - presence
     
     comfort_category:
-      name: ASHRAE 55 Comfort Category
+      name: Adaptive Comfort Category
       description: >
-        Comfort category based on ASHRAE 55 standard:
+        Comfort category based on adaptive comfort standard:
         - Category I: ±2°C (90% satisfaction) - Office environments
         - Category II: ±3°C (80% satisfaction) - Typical residential 
         - Category III: ±4°C (65% satisfaction) - Maximum energy savings
@@ -451,7 +451,7 @@ variables:
   base_adaptive_comfort_temp: >
     {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
   
-  # ASHRAE 55 outdoor temperature validation (10-40°C range with extrapolation warning)
+  # Adaptive comfort outdoor temperature validation (10-40°C range with extrapolation warning)
   outdoor_temp_valid: >
     {{ outdoor_temp >= 10 and outdoor_temp <= 40 }}
   
@@ -715,13 +715,13 @@ variables:
       {{ state_attr(this.entity_id, 'window_open_pause_until') }}
     {% endif %}
   
-  # ASHRAE 55 compliance notes
+  # Adaptive comfort compliance notes
   compliance_notes: >
     {% set notes = [] %}
     {% if outdoor_temp < 10 or outdoor_temp > 40 %}
       {% set notes = notes + ["Outdoor temp outside valid range (10-40°C): " + outdoor_temp|string + "°C"] %}
     {% elif outdoor_temp > 33.5 %}
-      {% set notes = notes + ["Outdoor temp above ASHRAE 55 standard range (10-33.5°C): " + outdoor_temp|string + "°C - using extrapolation"] %}
+      {% set notes = notes + ["Outdoor temp above standard range (10-33.5°C): " + outdoor_temp|string + "°C - using extrapolation"] %}
     {% endif %}
     {% if operative_temp <= 25 and air_velocity_val > 0.3 %}
       {% set notes = notes + ["Air velocity cooling only applies above 25°C operative temp"] %}
@@ -784,7 +784,7 @@ action:
               entity_id: "{{ primary_climate_entity_id }}"
           - service: logbook.log
             data:
-              name: "ASHRAE 55 Adaptive Climate"
+              name: "Adaptive Climate Control"
               message: >
                 {% if trv_window_open_detected and enable_trv_efficiency_monitoring_val %}
                 Window/door open detected by TRV sensor! HVAC paused for {{ window_open_pause_duration_val }} minutes.
@@ -816,7 +816,7 @@ action:
               entity_id: !input climate_entity
           - service: logbook.log
             data:
-              name: "ASHRAE 55 Adaptive Climate"
+              name: "Adaptive Climate Control"
               message: >
                 Natural ventilation active. HVAC turned off.
                 Outdoor: {{ outdoor_temp }}°C, Indoor: {{ indoor_temp }}°C,
@@ -865,7 +865,7 @@ action:
                           # Enhanced TRV logging with efficiency data
                           - service: logbook.log
                             data:
-                              name: "ASHRAE 55 Dual Climate"
+                              name: "Adaptive Dual Climate"
                               message: >
                                 {% if enable_trv_efficiency_monitoring_val %}
                                 Dual heating decision (TRV Enhanced): Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
@@ -1034,14 +1034,14 @@ action:
                             data:
                               fan_mode: "{{ optimal_fan_speed }}"
               
-              # Within comfort zone - ASHRAE 55 compliant intelligent mode selection
+              # Within comfort zone - Adaptive comfort compliant intelligent mode selection
               - conditions:
                   - condition: template
                     value_template: >
                       {{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max }}
                 sequence:
                   - choose:
-                      # ASHRAE 55 natural ventilation opportunity: outdoor > comfort_min > indoor
+                      # Adaptive natural ventilation opportunity: outdoor > comfort_min > indoor
                       - conditions:
                           - condition: template
                             value_template: >
@@ -1058,7 +1058,7 @@ action:
                             data:
                               fan_mode: "medium"
                       
-                      # ASHRAE 55 natural ventilation opportunity: outdoor < comfort_max < indoor
+                      # Adaptive natural ventilation opportunity: outdoor < comfort_max < indoor
                       - conditions:
                           - condition: template
                             value_template: >
@@ -1111,7 +1111,7 @@ action:
                             data:
                               temperature: "{{ target_temp }}"
                       
-                      # Default: within comfort zone, maintain with auto mode (ASHRAE 55 compliant)
+                      # Default: within comfort zone, maintain with auto mode (Adaptive comfort compliant)
                       - conditions: []
                         sequence:
                           - service: climate.set_hvac_mode
@@ -1138,9 +1138,9 @@ action:
           
           - service: logbook.log
             data:
-              name: "ASHRAE 55 Adaptive Climate"
+              name: "Adaptive Climate Control"
               message: >
-                ASHRAE 55 compliant climate control applied. 
+                Adaptive comfort compliant climate control applied. 
                 Target: {{ target_temp }}°C (Raw: {{ target_temp_raw | round(1) }}°C, Current: {{ current_temperature }}°C),
                 Smart rounding: {% if outdoor_temp > indoor_temp %}DOWN (outdoor warmer){% elif outdoor_temp < indoor_temp %}UP (outdoor cooler){% else %}STANDARD{% endif %},
                 Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C,
