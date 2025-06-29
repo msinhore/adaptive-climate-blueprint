@@ -319,6 +319,15 @@ blueprint:
       selector:
         boolean:
 
+    # State Storage Helper (Optional but recommended for window detection)
+    previous_temp_helper:
+      name: Previous Temperature Helper (Optional)
+      description: Input number helper to store previous temperature for window detection (e.g., input_number.adaptive_climate_prev_temp_sala). Create one in Settings > Helpers if using window detection.
+      default: ""
+      selector:
+        entity:
+          domain: input_number
+
 variables:
   climate_entity_id: !input climate_entity
   indoor_sensor_id: !input indoor_temp_sensor
@@ -351,6 +360,7 @@ variables:
   trv_valve_closing_sensor_id: !input trv_valve_closing_sensor
   trv_running_steps_sensor_id: !input trv_running_steps_sensor
   enable_trv_efficiency_monitoring_val: !input enable_trv_efficiency_monitoring
+  previous_temp_helper_id: !input previous_temp_helper
   
   comfort_tolerance: >
     {% if comfort_category_val == "I" %}
@@ -662,35 +672,25 @@ variables:
   
   # Window/Door open detection logic
   previous_indoor_temp: >
-    {{ state_attr(this.entity_id, 'previous_indoor_temp') | float(indoor_temp) }}
+    {% if previous_temp_helper_id and previous_temp_helper_id != "" %}
+      {{ states(previous_temp_helper_id) | float(indoor_temp) }}
+    {% else %}
+      {# Fallback: use current temp (no detection on first run) #}
+      {{ indoor_temp }}
+    {% endif %}
   
   temp_change_rate: >
     {{ (previous_indoor_temp - indoor_temp) | abs }}
   
   # Detect rapid temperature change (window/door opening)
   window_door_open_detected: >
-    {% if window_open_detection_val %}
+    {% if window_open_detection_val and previous_temp_helper_id and previous_temp_helper_id != "" %}
       {% set temp_change = (previous_indoor_temp - indoor_temp) | abs %}
-      {% set last_changed = state_attr(this.entity_id, 'last_changed') %}
-      {% if last_changed %}
-        {% set time_since_last_run = (now().timestamp() - last_changed.timestamp()) / 60 %}
-      {% else %}
-        {# First run or no previous state - use a safe default (assume 5 minutes) #}
-        {% set time_since_last_run = 5 %}
-      {% endif %}
-      {% set blueprint_detection = temp_change >= window_open_temp_change_val and time_since_last_run <= window_open_detection_time_val %}
-      {% if blueprint_detection %}
-        {# Rapid temperature change detected by blueprint #}
+      {% set temp_diff = previous_indoor_temp != indoor_temp %}
+      {% set meaningful_change = temp_change >= window_open_temp_change_val %}
+      {% if meaningful_change and temp_diff %}
+        {# Rapid temperature change detected #}
         true
-      {% elif state_attr(this.entity_id, 'window_open_pause_until') %}
-        {# Check if still in pause period #}
-        {% set pause_until_str = state_attr(this.entity_id, 'window_open_pause_until') %}
-        {% if pause_until_str %}
-          {% set pause_until = pause_until_str | as_timestamp %}
-          {{ now().timestamp() < pause_until }}
-        {% else %}
-          false
-        {% endif %}
       {% else %}
         false
       {% endif %}
@@ -700,10 +700,10 @@ variables:
   
   # Calculate when to resume HVAC after window/door detection
   window_open_pause_until: >
-    {% if window_door_open_detected and not state_attr(this.entity_id, 'window_open_pause_until') %}
+    {% if window_door_open_detected %}
       {{ (now().timestamp() + (window_open_pause_duration_val * 60)) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}
     {% else %}
-      {{ state_attr(this.entity_id, 'window_open_pause_until') }}
+      ""
     {% endif %}
   
   # Adaptive comfort compliance notes
@@ -781,14 +781,14 @@ action:
                 Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
-          # Store current state for next run
-          - service: automation.turn_on
+          # Update previous temperature helper for next run
+          - condition: template
+            value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+          - service: input_number.set_value
+            target:
+              entity_id: "{{ previous_temp_helper_id }}"
             data:
-              entity_id: !input climate_entity
-            data_template:
-              variables:
-                previous_indoor_temp: "{{ indoor_temp }}"
-                window_open_pause_until: "{{ window_open_pause_until }}"
+              value: "{{ indoor_temp }}"
       
       # Natural ventilation mode - turn off HVAC
       - conditions:
