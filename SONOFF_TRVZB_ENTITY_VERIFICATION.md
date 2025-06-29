@@ -11,7 +11,7 @@ No Home Assistant, navegue para **Developer Tools → States** e procure por ent
 #### ✅ Entidades que SEMPRE existem (conforme doc oficial Zigbee2MQTT):
 ```
 climate.radiator_sala                           # Controle principal (thermostat)
-binary_sensor.radiator_sala_open_window         # Detecção automática janela (>1.5°C drop em 4.5min)
+    ↳ state_attr('climate.radiator_sala', 'open_window')  # Propriedade window detection
 number.radiator_sala_valve_opening_degree       # Posição da válvula (0-100%)
 number.radiator_sala_valve_closing_degree       # Fechamento da válvula (0-100%)
 sensor.radiator_sala_closing_steps              # Passos do motor para fechar
@@ -24,8 +24,9 @@ number.radiator_sala_temperature_accuracy       # Precisão do controle (-0.2 a 
 
 #### ❌ Entidades que NÃO existem (confusão de documentação):
 ```
+binary_sensor.radiator_sala_open_window        # NÃO EXISTE - open_window é propriedade, não entidade
 switch.radiator_sala_open_window               # NÃO EXISTE - era erro na documentação
-sensor.radiator_sala_open_window              # NÃO EXISTE - o correto é binary_sensor
+sensor.radiator_sala_open_window              # NÃO EXISTE - o correto é state_attr
 ```
 
 ### 3. Para o Blueprint Adaptive Climate
@@ -39,15 +40,23 @@ trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 
-# Window detection - entidade oficial
-trv_window_open_sensor: binary_sensor.radiator_sala_open_window
+# Window detection - MÉTODO 1: Criar template sensor (recomendado)
+# Primeiro, crie em configuration.yaml:
+template:
+  - binary_sensor:
+      - name: "Sala Window Open TRV"
+        unique_id: sala_window_open_trv
+        state: "{{ state_attr('climate.radiator_sala', 'open_window') == true }}"
+        device_class: window
+
+# Depois use no blueprint:
+trv_window_open_sensor: binary_sensor.sala_window_open_trv
 ```
 
-#### Se você ENCONTRAR um sensor de janela:
+#### Método Alternativo (sensor físico):
 ```yaml
-# Use o sensor específico que encontrou
-trv_window_open_sensor: binary_sensor.radiator_sala_window_detection
-# OU
+# Se você tem um sensor de janela/porta dedicado, use esse
+trv_window_open_sensor: binary_sensor.porta_sala_contact
 trv_window_open_sensor: sensor.radiator_sala_open_window
 ```
 

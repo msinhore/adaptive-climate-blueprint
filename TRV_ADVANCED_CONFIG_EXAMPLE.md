@@ -31,12 +31,19 @@ trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 
 # TRV window open detection integration
 # BASEADO NA DOCUMENTAÇÃO OFICIAL ZIGBEE2MQTT:
-# O Sonoff TRVZB tem um sensor binary "open_window" que detecta automaticamente
-# quedas de temperatura > 1.5°C em 4.5 minutos
+# O Sonoff TRVZB publica "open_window" como propriedade do estado do climate entity
+# Detecta automaticamente quedas de temperatura > 1.5°C em 4.5 minutos
 #
-# CONFIGURAÇÃO CORRETA:
-# Use binary_sensor.radiator_sala_open_window (entidade criada pelo Z2M)
-trv_window_open_sensor: binary_sensor.radiator_sala_open_window
+# CONFIGURAÇÃO CORRETA (Template Sensor):
+# Use state_attr para acessar a propriedade open_window do climate entity
+# Método 1 - Template sensor (recomendado para blueprint):
+trv_window_open_sensor: binary_sensor.sala_window_open_trv
+# 
+# Método 2 - Template direto no blueprint:
+# {{ state_attr('climate.radiator_sala', 'open_window') == true }}
+#
+# NOTA: Se não existe binary_sensor.sala_window_open_trv, crie um template sensor
+# ou use um sensor de janela/porta dedicado como alternativa
 
 # TRV motor activity monitoring
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
@@ -52,8 +59,10 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 ### Control Entities
 - `switch.radiator_sala_child_lock` - Safety lock control
 - `number.radiator_sala_frost_protection_temperature` - Frost protection setting
-- `switch.radiator_sala_open_window` - **INEXISTENTE** (confusão de documentação)
-- `binary_sensor.radiator_sala_open_window` - **Detecção automática** de janela aberta (queda >1.5°C em 4.5min)
+- **WINDOW DETECTION**: `state_attr('climate.radiator_sala', 'open_window')` - **Propriedade do climate entity**
+  - Detecta automaticamente queda de temperatura >1.5°C em 4.5 minutos
+  - Valores: `true` (janela aberta detectada) / `false` (janela fechada)
+  - **NÃO existe** como entidade separada `binary_sensor.radiator_sala_open_window`
 - `number.radiator_sala_external_temperature_input` - External temperature input
 - `number.radiator_sala_temperature_accuracy` - Temperature accuracy adjustment
 
@@ -80,10 +89,23 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
    - `number.radiator_sala_valve_closing_degree` → `trv_valve_closing_sensor`
 
 2. **Window Detection Integration**:
-   - **CORRETO**: `binary_sensor.radiator_sala_open_window` → `trv_window_open_sensor`
-   - **Função**: Detecta automaticamente queda de temp >1.5°C em 4.5 minutos
+   - **MÉTODO 1 - Template Sensor (Recomendado)**:
+     ```yaml
+     # Em configuration.yaml, crie um template sensor:
+     template:
+       - binary_sensor:
+           - name: "Sala Window Open TRV"
+             unique_id: sala_window_open_trv
+             state: "{{ state_attr('climate.radiator_sala', 'open_window') == true }}"
+             device_class: window
+     ```
+     Depois use: `binary_sensor.sala_window_open_trv` → `trv_window_open_sensor`
+   
+   - **MÉTODO 2 - Sensor Físico (Alternativa)**:
+     Use um sensor de janela/porta dedicado se disponível
+   
+   - **Funcionamento**: Detecta automaticamente queda de temp >1.5°C em 4.5 minutos
    - **Estados**: ON = janela detectada como aberta, OFF = janela fechada
-   - **Automático**: Não precisa configurar thresholds, o TRV faz internamente
 
 3. **Motor Activity Monitoring**:
    - `sensor.radiator_sala_closing_steps` → `trv_running_steps_sensor`

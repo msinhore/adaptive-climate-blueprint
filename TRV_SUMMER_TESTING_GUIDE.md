@@ -10,12 +10,26 @@ Since TRV heating is not needed during summer, here are ways to validate the dua
 Go to **Developer Tools → States** and verify these entities exist and are responsive:
 
 ```
-climate.radiator_sala
-number.radiator_sala_valve_opening_degree
-number.radiator_sala_valve_closing_degree
-binary_sensor.radiator_sala_open_window
-sensor.radiator_sala_closing_steps
-sensor.radiator_sala_battery
+climate.radiator_sala                           # Principal TRV control
+    ↳ state_attr('climate.radiator_sala', 'open_window')  # Window detection property
+number.radiator_sala_valve_opening_degree       # Valve position
+number.radiator_sala_valve_closing_degree       # Valve closing
+sensor.radiator_sala_closing_steps              # Motor activity
+sensor.radiator_sala_battery                    # Battery level
+```
+
+**IMPORTANTE**: O Sonoff TRVZB não cria `binary_sensor.radiator_sala_open_window` como entidade separada. O window detection é uma **propriedade** do climate entity.
+
+#### Criar Template Sensor para Window Detection
+Se quiser usar no blueprint, adicione em `configuration.yaml`:
+
+```yaml
+template:
+  - binary_sensor:
+      - name: "Sala Window Open TRV"
+        unique_id: sala_window_open_trv
+        state: "{{ state_attr('climate.radiator_sala', 'open_window') == true }}"
+        device_class: window
 ```
 
 #### Blueprint Configuration Test
@@ -28,7 +42,7 @@ primary_climate_entity: climate.radiator_sala
 secondary_heating_threshold: 2.0
 trv_priority_temp_difference: 5.0
 enable_trv_efficiency_monitoring: true
-trv_window_open_sensor: binary_sensor.radiator_sala_open_window  # Sensor oficial Z2M
+trv_window_open_sensor: binary_sensor.sala_window_open_trv  # Template sensor baseado na propriedade Z2M
 # Add all TRV sensors...
 ```
 
