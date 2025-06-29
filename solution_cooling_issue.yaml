@@ -1,0 +1,90 @@
+# SOLUÇÃO PARA O PROBLEMA DE COOLING - Baseado na discussão do usuário
+
+## Problema Identificado:
+Com temp externa 33.4°C e interna 27.5°C, o AC deveria estar ligando mas desliga imediatamente.
+
+## Diagnóstico Rápido - Execute no Developer Tools > Templates:
+
+```yaml
+# DIAGNÓSTICO COMPLETO - Substitua pelos seus sensores reais
+
+# === TEMPERATURAS ===
+Temp Externa: {{ states('sensor.seu_temp_externa') }}°C
+Temp Interna: {{ states('sensor.seu_temp_interna') }}°C
+
+# === ZONA DE CONFORTO ===
+{% set outdoor_temp = states('sensor.seu_temp_externa') | float %}
+{% set indoor_temp = states('sensor.seu_temp_interna') | float %}
+{% set base_adaptive = (18.9 + 0.255 * outdoor_temp) | round(1) %}
+{% set comfort_max = [base_adaptive + 3, 27] | min %}
+
+Temperatura Adaptativa: {{ base_adaptive }}°C
+Zona Conforto Max: {{ comfort_max }}°C
+PRECISA COOLING: {{ indoor_temp > comfort_max }}
+
+# === VENTILAÇÃO NATURAL (PRINCIPAL SUSPEITA) ===
+{% set nat_vent_threshold = 2.0 %}
+{% set diff_ext_int = outdoor_temp - indoor_temp %}
+{% set temp_suitable = (diff_ext_int >= -nat_vent_threshold) and (diff_ext_int <= nat_vent_threshold) %}
+
+Diferença Externa-Interna: {{ diff_ext_int | round(1) }}°C
+Threshold Ventilação: {{ nat_vent_threshold }}°C
+Ventilação Natural ATIVA: {{ temp_suitable }}
+Está na zona de ventilação?: {{ (diff_ext_int >= -2) and (diff_ext_int <= 2) }}
+
+# === ESTADO DO SISTEMA ===
+AC Estado: {{ states('climate.seu_ac') }}
+AC Modo HVAC: {{ state_attr('climate.seu_ac', 'hvac_mode') }}
+AC Temperatura Alvo: {{ state_attr('climate.seu_ac', 'temperature') }}°C
+
+# === TRV STATUS (se configurado) ===
+TRV Estado: {{ states('climate.radiator_sala') }}
+TRV HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }}
+TRV Switch Window Detection: {{ states('switch.radiator_sala_open_window') }} (enabled/disabled)
+
+# === AUTOMAÇÃO ===
+Automação Estado: {{ states('automation.seu_adaptive_climate') }}
+Automação Última Execução: {{ state_attr('automation.seu_adaptive_climate', 'last_triggered') }}
+```
+
+## Causa Mais Provável:
+**VENTILAÇÃO NATURAL** está impedindo o cooling!
+
+Com sua configuração:
+- Externa: 33.4°C
+- Interna: 27.5°C  
+- Diferença: 5.9°C
+
+Se o threshold de ventilação natural estiver configurado como 6°C ou mais, o sistema considerará que "não precisa de AC porque pode usar ventilação natural".
+
+## Soluções:
+
+### Solução 1: Desabilitar Ventilação Natural (Teste Imediato)
+```yaml
+natural_ventilation_enable: false
+```
+
+### Solução 2: Reduzir Threshold de Ventilação Natural
+```yaml
+natural_ventilation_threshold: 1.0  # Ao invés do padrão 2.0
+```
+
+### Solução 3: Configuração TRV Correta (Baseado no fórum)
+```yaml
+# Para Sonoff TRVZB, deixe window detection vazio
+trv_window_open_sensor: ""  # NÃO use switch.radiator_sala_open_window
+
+# O blueprint monitora automaticamente via hvac_action da entidade climate
+```
+
+### Solução 4: Verificar Logs da Automação
+Vá em **Developer Tools → Logbook** e procure mensagens da sua automação nos últimos 10 minutos para ver exatamente por que o AC desligou.
+
+## Teste Definitivo:
+1. Configure `natural_ventilation_enable: false`
+2. Aguarde 10 minutos (próximo ciclo)  
+3. Verifique se AC liga e mantém cooling
+4. Se funcionar: o problema era ventilação natural
+5. Se não funcionar: execute o diagnóstico completo acima
+
+**Com 33.4°C externa e 27.5°C interna, o AC DEVE estar ligado!**

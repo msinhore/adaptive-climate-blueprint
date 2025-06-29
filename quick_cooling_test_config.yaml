@@ -1,0 +1,24 @@
+# CONFIGURAÇÃO TEMPORÁRIA PARA TESTE DE COOLING
+# Use esta configuração para testar se o problema é a ventilação natural
+
+# Na sua automação do blueprint, temporariamente configure:
+
+natural_ventilation_enable: false  # DESABILITA ventilação natural
+window_open_detection: false       # DESABILITA detecção de janela temporariamente
+
+# Outros parâmetros para garantir funcionamento:
+comfort_category: "II"             # Category II (±3°C)
+min_comfort_temp: 18               # Sua configuração atual
+max_comfort_temp: 27               # Sua configuração atual
+energy_save_mode: true             # Mantém economia
+
+# Se funcionar com essas configurações, o problema era:
+# 1. Ventilação natural (mais provável)
+# 2. Detecção de janela/porta
+
+# Depois que confirmar que funciona, reative um por vez:
+# 1. Primeiro, reative window_open_detection: true
+# 2. Depois, reative natural_ventilation_enable: true com threshold menor
+
+# Para ventilação natural mais restritiva:
+natural_ventilation_threshold: 0.5  # Bem restritivo para teste

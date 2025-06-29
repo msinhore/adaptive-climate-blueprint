@@ -110,7 +110,8 @@ sensor:
         friendly_name: "TRV Summer Data"
         value_template: >
           Valve: {{ states('number.radiator_sala_valve_opening_degree') }}%, 
-          Window: {{ states('switch.radiator_sala_open_window') }}, 
+          Window Detection Enabled: {{ states('switch.radiator_sala_open_window') }}, 
+          HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }},
           Battery: {{ states('sensor.radiator_sala_battery') }}%,
           Steps: {{ states('sensor.radiator_sala_closing_steps') }}
 ```
@@ -151,7 +152,11 @@ entities:
   - entity: number.radiator_sala_valve_opening_degree
     name: "Valve Position"
   - entity: switch.radiator_sala_open_window
-    name: "Window Detection"
+    name: "Window Detection (Enable/Disable)"
+  - type: attribute
+    entity: climate.radiator_sala
+    attribute: hvac_action
+    name: "HVAC Action (idle/heating)"
   - entity: sensor.radiator_sala_battery
     name: "Battery Level"
   - entity: sensor.radiator_sala_closing_steps
@@ -174,8 +179,9 @@ automation:
           name: "TRV Summer Test"
           message: >
             TRV Test Data: Valve {{ states('number.radiator_sala_valve_opening_degree') }}%, 
-            Window {{ states('switch.radiator_sala_open_window') }}, 
-            Battery {{ states('sensor.radiator_sala_battery') }}%,
+            Window Detection: {{ states('switch.radiator_sala_open_window') }} (enabled/disabled), 
+            HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }},
+            Battery: {{ states('sensor.radiator_sala_battery') }}%,
             Ready for winter testing: {{ 'Yes' if states('climate.radiator_sala') != 'unavailable' else 'No' }}
 ```
 

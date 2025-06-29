@@ -30,7 +30,10 @@ trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 
 # TRV window open detection integration
-trv_window_open_sensor: switch.radiator_sala_open_window
+# IMPORTANTE: Para Sonoff TRVZB, use o climate entity principal
+# O TRV detecta janela aberta internamente e reporta via hvac_action
+# Deixe em branco ou use binary_sensor customizado se necessário
+trv_window_open_sensor: ""  # Deixar vazio para Sonoff TRVZB
 
 # TRV motor activity monitoring
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
@@ -38,13 +41,15 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 
 ## Available Sonoff TRVZB Entities
 
-### Climate Entity
+### Climate Entity (Primary)
 - `climate.radiator_sala` - Main TRV control entity
+- **Importante**: Use `state_attr('climate.radiator_sala', 'hvac_action')` para monitorar se está aquecendo
+- Estados do hvac_action: 'idle', 'heating', 'off'
 
 ### Control Entities
 - `switch.radiator_sala_child_lock` - Safety lock control
 - `number.radiator_sala_frost_protection_temperature` - Frost protection setting
-- `switch.radiator_sala_open_window` - Window open detection status
+- `switch.radiator_sala_open_window` - **Habilita/desabilita** detecção de janela (não indica estado)
 - `number.radiator_sala_external_temperature_input` - External temperature input
 - `number.radiator_sala_temperature_accuracy` - Temperature accuracy adjustment
 
@@ -72,6 +77,9 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 
 2. **Window Detection Integration**:
    - `switch.radiator_sala_open_window` → `trv_window_open_sensor`
+   - **Nota**: Este switch habilita/desabilita a detecção de janela do TRV
+   - Quando habilitado, o TRV detecta automaticamente janelas abertas por algoritmos internos
+   - O blueprint monitora se o TRV detectou janela aberta, não o estado do switch
 
 3. **Motor Activity Monitoring**:
    - `sensor.radiator_sala_closing_steps` → `trv_running_steps_sensor`

@@ -1,0 +1,70 @@
+# Diagnóstico para problema de cooling - Execute no Developer Tools > Templates
+
+# COLE ESTE CÓDIGO NO DEVELOPER TOOLS > TEMPLATES PARA DIAGNOSTICAR:
+
+# 1. Temperaturas e zona de conforto
+Temperatura Externa: {{ states('SEU_SENSOR_TEMP_EXTERNA') }}°C
+Temperatura Interna: {{ states('SEU_SENSOR_TEMP_INTERNA') }}°C
+
+# Cálculo da zona de conforto adaptativo
+{% set outdoor_temp = states('SEU_SENSOR_TEMP_EXTERNA') | float %}
+{% set indoor_temp = states('SEU_SENSOR_TEMP_INTERNA') | float %}
+{% set base_adaptive_comfort = (18.9 + 0.255 * outdoor_temp) | round(1) %}
+{% set comfort_tolerance = 3.0 %}  # Assumindo Category II
+{% set min_comfort_temp = 18.0 %}  # Seus valores configurados
+{% set max_comfort_temp = 27.0 %}  # Seus valores configurados
+
+Temperatura Adaptativa Base: {{ base_adaptive_comfort }}°C
+Zona de Conforto Min: {{ [base_adaptive_comfort - comfort_tolerance, min_comfort_temp] | max | round(1) }}°C
+Zona de Conforto Max: {{ [base_adaptive_comfort + comfort_tolerance, max_comfort_temp] | min | round(1) }}°C
+
+Temperatura ACIMA da zona?: {{ indoor_temp > ([base_adaptive_comfort + comfort_tolerance, max_comfort_temp] | min | round(1)) }}
+
+# 2. Verificações de estado
+Estado do AC: {{ states('SEU_CLIMATE_ENTITY') }}
+Modo HVAC Atual: {{ state_attr('SEU_CLIMATE_ENTITY', 'hvac_mode') }}
+Temperatura Alvo Atual: {{ state_attr('SEU_CLIMATE_ENTITY', 'temperature') }}°C
+
+# 3. Detecção de problemas potenciais
+
+# Ventilação Natural (pode estar impedindo cooling)
+{% set natural_ventilation_threshold = 2.0 %}  # Valor padrão
+{% set temp_suitable = (outdoor_temp >= (indoor_temp - natural_ventilation_threshold)) and 
+                       (outdoor_temp <= (indoor_temp + natural_ventilation_threshold)) %}
+Diferença Externa-Interna: {{ (outdoor_temp - indoor_temp) | round(1) }}°C
+Threshold Ventilação Natural: {{ natural_ventilation_threshold }}°C
+Ventilação Natural ATIVA: {{ temp_suitable }}
+
+# 4. Detecção de Janela/Porta (CORRIGIDO)
+# BLUEPRINT - Detecção por queda rápida de temperatura
+{% if states('automation.SUA_AUTOMACAO') != 'unavailable' %}
+Temp Anterior (blueprint): {{ state_attr('automation.SUA_AUTOMACAO', 'previous_indoor_temp') | float(indoor_temp) }}°C
+Queda de Temp: {{ (state_attr('automation.SUA_AUTOMACAO', 'previous_indoor_temp') | float(indoor_temp) - indoor_temp) | round(1) }}°C
+{% endif %}
+
+# TRV - Detecção real de janela aberta (sensor específico do TRV)
+Switch Detecção TRV: {{ states('switch.radiator_sala_open_window') }} (habilitado/desabilitado)
+{% if states('SEU_TRV_WINDOW_SENSOR') != 'unavailable' %}
+TRV DETECTA JANELA ABERTA: {{ states('SEU_TRV_WINDOW_SENSOR') }}
+{% else %}
+TRV Window Sensor: NÃO CONFIGURADO (substitua SEU_TRV_WINDOW_SENSOR)
+{% endif %}
+
+# 5. Estado da automação
+Estado da Automação: {{ states('automation.SUA_AUTOMACAO') }}
+Última execução: {{ state_attr('automation.SUA_AUTOMACAO', 'last_triggered') }}
+
+# 6. Verificação de sensores
+Sensor Temperatura Externa OK: {{ states('SEU_SENSOR_TEMP_EXTERNA') not in ['unavailable', 'unknown'] }}
+Sensor Temperatura Interna OK: {{ states('SEU_SENSOR_TEMP_INTERNA') not in ['unavailable', 'unknown'] }}
+Climate Entity OK: {{ states('SEU_CLIMATE_ENTITY') not in ['unavailable', 'unknown'] }}
+
+---
+SUBSTITUA:
+- SEU_SENSOR_TEMP_EXTERNA (ex: sensor.temperature_outdoor)
+- SEU_SENSOR_TEMP_INTERNA (ex: sensor.temperature_indoor) 
+- SEU_CLIMATE_ENTITY (ex: climate.ar_condicionado)
+- SUA_AUTOMACAO (ex: automation.adaptive_climate_comfort)
+- SEU_TRV_WINDOW_SENSOR (sensor real do TRV que detecta janela, não o switch)
+
+Execute no Developer Tools > Templates e compartilhe o resultado!
