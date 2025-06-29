@@ -210,9 +210,9 @@ blueprint:
       selector:
         boolean:
     
-    window_open_temp_drop:
-      name: Temperature Drop Threshold (°C)
-      description: Temperature drop within detection time that indicates window/door opening
+    window_open_temp_change:
+      name: Temperature Change Threshold (°C)
+      description: Temperature change (increase or decrease) within detection time that indicates window/door opening
       default: 2.0
       selector:
         number:
@@ -340,7 +340,7 @@ variables:
   humidity_comfort_enable_val: !input humidity_comfort_enable
   comfort_precision_mode_val: !input comfort_precision_mode
   window_open_detection_val: !input window_open_detection
-  window_open_temp_drop_val: !input window_open_temp_drop
+  window_open_temp_change_val: !input window_open_temp_change
   window_open_detection_time_val: !input window_open_detection_time
   window_open_pause_duration_val: !input window_open_pause_duration
   dual_climate_control_val: !input dual_climate_control
@@ -667,10 +667,10 @@ variables:
   temp_change_rate: >
     {{ (previous_indoor_temp - indoor_temp) | abs }}
   
-  # Detect rapid temperature drop (window/door opening)
+  # Detect rapid temperature change (window/door opening)
   window_door_open_detected: >
     {% if window_open_detection_val %}
-      {% set temp_drop = previous_indoor_temp - indoor_temp %}
+      {% set temp_change = (previous_indoor_temp - indoor_temp) | abs %}
       {% set last_changed = state_attr(this.entity_id, 'last_changed') %}
       {% if last_changed %}
         {% set time_since_last_run = (now().timestamp() - last_changed.timestamp()) / 60 %}
@@ -678,9 +678,9 @@ variables:
         {# First run or no previous state - use a safe default (assume 5 minutes) #}
         {% set time_since_last_run = 5 %}
       {% endif %}
-      {% set blueprint_detection = temp_drop >= window_open_temp_drop_val and time_since_last_run <= window_open_detection_time_val %}
+      {% set blueprint_detection = temp_change >= window_open_temp_change_val and time_since_last_run <= window_open_detection_time_val %}
       {% if blueprint_detection %}
-        {# Rapid temperature drop detected by blueprint #}
+        {# Rapid temperature change detected by blueprint #}
         true
       {% elif state_attr(this.entity_id, 'window_open_pause_until') %}
         {# Check if still in pause period #}
@@ -778,7 +778,7 @@ action:
               name: "Adaptive Climate Control"
               message: >
                 Window/door open detected! HVAC paused for {{ window_open_pause_duration_val }} minutes.
-                Temperature drop: {{ (previous_indoor_temp - indoor_temp) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
+                Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
           # Store current state for next run

@@ -219,7 +219,7 @@ Your thermostat keeps the same temperature year-round. This blueprint changes th
 No! Works with whatever AC/heating you already have in Home Assistant (SmartIR, climate entities, etc.) plus any indoor temperature sensor. You can even use weather services instead of outdoor sensors.
 
 ### "Is this just for opening windows?"
-No, that's a small part. The main function is **automatically adjusting your AC/heating setpoint** based on weather conditions using scientifically proven comfort models.
+No, that's a small part. The main function is **automatically adjusting your AC/heating setpoint** based on weather conditions using scientifically proven comfort models. The window/door detection feature automatically pauses HVAC when rapid temperature changes are detected (both increases and decreases), preventing energy waste when ventilating.
 
 ### "How much energy does it really save?"
 In real testing: 15-30% savings. Your results depend on your local climate, home insulation, and current thermostat habits.
