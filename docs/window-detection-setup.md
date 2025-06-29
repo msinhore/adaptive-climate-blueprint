@@ -35,28 +35,82 @@ When creating/editing your Adaptive Climate automation:
 - ⏸️ **HVAC Pause**: Automatically pauses heating/cooling for configured duration
 - 🔄 **Auto Resume**: HVAC resumes after pause period
 
-### 4. Testing
+### 4. Testing & Debugging
 
+**Check if helper is updating:**
+- Go to **Developer Tools** → **States**
+- Find your helper entity (e.g., `input_number.adaptive_climate_prev_temp_sala`)
+- Value should update every time the automation runs (every 10 minutes or when temperature changes)
+
+**Test detection:**
 - **Winter Test**: Open window while heating is on → should detect temperature drop
 - **Summer Test**: Open window while cooling is on → should detect temperature rise
-- **Check Logs**: Look for "Window/door open detected!" messages in Home Assistant logs
+- **Check Logs**: Look for these messages in **Settings** → **System** → **Logs**:
+  - `"Window/door open detected!"` - Detection triggered
+  - `"Updated previous temperature helper"` - Helper state updated
+  - `"Adaptive Climate - State Update"` - Debug information
 
 ### 5. Troubleshooting
 
 **Detection not working?**
-- ✅ Ensure helper is created and selected in blueprint
-- ✅ Check temperature sensor is updating correctly
-- ✅ Verify threshold is appropriate for your environment
-- ✅ Look at logbook for detection messages
+1. ✅ **Helper exists**: Check if `input_number.adaptive_climate_prev_temp_[room]` exists in **Developer Tools** → **States**
+2. ✅ **Helper updating**: Value should change every 10 minutes when automation runs
+3. ✅ **Blueprint configured**: Helper selected in "Previous Temperature Helper" parameter
+4. ✅ **Temperature sensor working**: Current indoor temperature updating correctly
+5. ✅ **Threshold appropriate**: Default 2.0°C might be too sensitive or not sensitive enough
+6. ✅ **Debug logs**: Look for "Updated previous temperature helper" messages
+
+**Helper not updating?**
+- 🔄 **Reload automation**: Settings → Automations → Find your automation → ⋮ → Reload
+- 🔄 **Restart Home Assistant**: Sometimes needed after blueprint changes
+- 📝 **Check automation trace**: Go to automation → Run actions → View trace
 
 **False positives?**
-- 📈 Increase temperature change threshold (try 2.5°C or 3.0°C)
-- ⏱️ Check sensor placement - avoid direct sun/heat sources
+- 📈 **Increase threshold**: Try 2.5°C or 3.0°C instead of 2.0°C
+- ⏱️ **Sensor placement**: Avoid sensors near windows, heat sources, or direct sunlight
+- 📊 **Check sensor stability**: Some sensors have natural fluctuations
 
-**No helper option?**
-- 🔧 Create the input_number helper first
-- 🔄 Reload blueprint or restart Home Assistant
-- 📝 Check helper entity ID matches pattern
+**Helper value stuck?**
+- 🔧 **Manually update**: Developer Tools → Services → `input_number.set_value`
+- 📋 **Entity ID**: `input_number.adaptive_climate_prev_temp_[room]`
+- � **Value**: Current room temperature
+
+**No detection messages in logs?**
+- 🔍 **Enable automation traces**: Settings → Automations → Your automation → Enable tracing
+- � **Check conditions**: Temperature change ≥ threshold AND helper configured AND detection enabled
+- ⚡ **Manual trigger**: Test automation manually with current conditions
+
+### 6. Understanding the Debug Logs
+
+When the automation runs, you'll see these log messages:
+
+**State Update Log:**
+```
+Updated previous temperature helper: input_number.adaptive_climate_prev_temp_sala = 22.5°C
+(was 22.3°C, change: 0.2°C)
+Window detection: ON (threshold: 2.0°C)
+```
+
+**What this means:**
+- 🌡️ **Current temperature**: 22.5°C (stored for next run)
+- 📊 **Previous temperature**: 22.3°C (from last run)
+- 📈 **Temperature change**: 0.2°C absolute difference
+- ⚙️ **Detection status**: ON with 2.0°C threshold
+- ❌ **No detection**: 0.2°C < 2.0°C threshold
+
+**Detection Triggered Log:**
+```
+Window/door open detected! HVAC paused for 15 minutes.
+Temperature change: 2.8°C in 5 minutes.
+Indoor: 19.2°C (was 22.0°C), Outdoor: 15.0°C.
+```
+
+**What this means:**
+- 🚪 **Detection triggered**: Temperature change exceeded threshold
+- 📉 **Change amount**: 2.8°C drop (22.0°C → 19.2°C)
+- ⏰ **Time frame**: Change detected within window
+- ❄️ **Context**: Outdoor cooler (15.0°C) suggests window opening
+- ⏸️ **HVAC paused**: For configured duration (15 minutes)
 
 ---
 
