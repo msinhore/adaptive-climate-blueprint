@@ -2,7 +2,24 @@
 
 ## Problema Identificado
 
-Baseado na **documentação oficial do Zigbee2MQTT**, o Sonoff TRVZB não cria uma entidade `binary_sensor.radiator_sala_open_window` separada. Em vez disso, publica `open_window` como uma **propriedade do estado** do `climate` entity.
+Baseado na **documentação oficial do Zigbee2MQTT**, o Sonoff TRVZB não cria uma entidade `binary_sensor### Debug Issues - Opções Práticas
+
+**Se `open_window` não existir no seu TRV:**
+
+1. **SOLUÇÃO MAIS SIMPLES - Desabilitar:**
+   ```yaml
+   # No blueprint, deixe vazio - funciona perfeitamente
+   trv_window_open_sensor: ""
+   ```
+
+2. **SOLUÇÃO ALTERNATIVA - Sensor Físico:**
+   ```yaml
+   # Use um sensor de porta/janela dedicado
+   trv_window_open_sensor: binary_sensor.porta_sala_contact
+   ```
+
+3. **SOLUÇÃO AVANÇADA - Template de Temperatura:**
+   Crie detecção baseada em queda rápida de temperaturaopen_window` separada. Em vez disso, publica `open_window` como uma **propriedade do estado** do `climate` entity.
 
 ## Solução: Template Sensor
 
@@ -99,7 +116,86 @@ name: "Window Detection (TRV)"
 icon: mdi:window-open-variant
 ```
 
-### Debug Issues
+## ⚠️ Troubleshooting: Propriedade open_window Não Encontrada
+
+### Se Você Não Encontrar `open_window`
+
+Isso é **comum** e pode ter várias causas:
+
+#### 1. Verificar Todas as Propriedades Disponíveis
+
+No **Developer Tools → Template**, teste:
+
+```jinja2
+{{ state_attr('climate.radiator_sala', '') }}
+```
+
+Ou liste todos os atributos:
+
+```jinja2
+{% for attr in state_attr('climate.radiator_sala', '') %}
+  {{ attr }}: {{ state_attr('climate.radiator_sala', attr) }}
+{% endfor %}
+```
+
+#### 2. Verificar no Zigbee2MQTT
+
+Se você usar Zigbee2MQTT, vá em:
+- **Zigbee2MQTT → Devices → Seu TRV**
+- Procure por configurações como:
+  - `window_detection`
+  - `open_window_temperature`
+  - `window_open`
+
+#### 3. Habilitar Window Detection
+
+Algumas opções para habilitar:
+
+**Via MQTT (se usando Zigbee2MQTT):**
+```bash
+# Publicar comando para habilitar
+mosquitto_pub -h localhost -t "zigbee2mqtt/radiator_sala/set" -m '{"window_detection": "ON"}'
+```
+
+**Via Home Assistant Developer Tools → Services:**
+```yaml
+service: mqtt.publish
+data:
+  topic: "zigbee2mqtt/radiator_sala/set"
+  payload: '{"window_detection": "ON"}'
+```
+
+#### 4. Alternativas Práticas
+
+Se o TRV não suporta window detection automático, use estas alternativas:
+
+**Opção A - Sensor de Janela/Porta Físico:**
+```yaml
+# Use um sensor Zigbee dedicado
+trv_window_open_sensor: binary_sensor.porta_sala_contact
+```
+
+**Opção B - Template Baseado em Temperatura:**
+```yaml
+template:
+  - binary_sensor:
+      - name: "Sala Window Open Detection"
+        unique_id: sala_window_detection_temp
+        state: >
+          {% set temp_now = states('sensor.temperatura_sala') | float %}
+          {% set temp_5min = state_attr('sensor.temperatura_sala', 'temperature_5min_ago') | float %}
+          {{ (temp_now - temp_5min) < -1.5 }}
+        device_class: window
+```
+
+**Opção C - Desabilitar Window Detection:**
+```yaml
+# No blueprint, deixe vazio
+trv_window_open_sensor: ""
+# O blueprint funciona normalmente sem window detection
+```
+
+### Verificação e Debug
 
 Se o template não funcionar:
 
