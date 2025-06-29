@@ -689,7 +689,13 @@ variables:
   window_door_open_detected: >
     {% if window_open_detection_val %}
       {% set temp_drop = previous_indoor_temp - indoor_temp %}
-      {% set time_since_last_run = (now().timestamp() - state_attr(this.entity_id, 'last_changed').timestamp()) / 60 %}
+      {% set last_changed = state_attr(this.entity_id, 'last_changed') %}
+      {% if last_changed %}
+        {% set time_since_last_run = (now().timestamp() - last_changed.timestamp()) / 60 %}
+      {% else %}
+        {# First run or no previous state - use a safe default (assume 5 minutes) #}
+        {% set time_since_last_run = 5 %}
+      {% endif %}
       {% set blueprint_detection = temp_drop >= window_open_temp_drop_val and time_since_last_run <= window_open_detection_time_val %}
       {% set trv_detection = trv_window_open_detected %}
       {% if blueprint_detection or trv_detection %}
@@ -697,8 +703,13 @@ variables:
         true
       {% elif state_attr(this.entity_id, 'window_open_pause_until') %}
         {# Check if still in pause period #}
-        {% set pause_until = state_attr(this.entity_id, 'window_open_pause_until') | as_timestamp %}
-        {{ now().timestamp() < pause_until }}
+        {% set pause_until_str = state_attr(this.entity_id, 'window_open_pause_until') %}
+        {% if pause_until_str %}
+          {% set pause_until = pause_until_str | as_timestamp %}
+          {{ now().timestamp() < pause_until }}
+        {% else %}
+          false
+        {% endif %}
       {% else %}
         false
       {% endif %}
