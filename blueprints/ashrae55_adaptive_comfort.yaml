@@ -772,7 +772,7 @@ condition:
 
 action:
   - choose:
-      # Window/Door open detection - pause HVAC
+      # Window/Door open detection - pause HVAC but still update helper when detection occurs
       - conditions:
           - condition: template
             value_template: "{{ window_door_open_detected }}"
@@ -795,27 +795,28 @@ action:
                 Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
-      
-      # Natural ventilation mode - turn off HVAC
-      - conditions:
+          
+          # Update helper only when detection occurs (real detection)
           - condition: template
-            value_template: "{{ natural_ventilation_available and is_occupied and not window_door_open_detected }}"
-        sequence:
-          - service: climate.turn_off
+            value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+          - service: input_number.set_value
             target:
-              entity_id: !input climate_entity
+              entity_id: "{{ previous_temp_helper_id }}"
+            data:
+              value: "{{ indoor_temp }}"
           - service: logbook.log
             data:
-              name: "Adaptive Climate Control"
+              name: "Adaptive Climate - Detection Update"
               message: >
-                Natural ventilation active. HVAC turned off.
-                Outdoor: {{ outdoor_temp }}°C, Indoor: {{ indoor_temp }}°C,
-                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C
+                Window/door detection triggered - Updated previous temperature helper: {{ previous_temp_helper_id }} = {{ indoor_temp }}°C
+                (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
       
-      # Normal climate control
+      # Normal climate control - ALWAYS execute if window/door not detected
+      # This ensures all ASHRAE 55, comfort, occupancy, and ventilation rules are applied
+      # (Natural ventilation is handled within the normal logic, not as a separate blocking condition)
       - conditions:
           - condition: template
-            value_template: "{{ not natural_ventilation_available and not window_door_open_detected }}"
+            value_template: "{{ not window_door_open_detected }}"
         sequence:
           - choose:
               # Heating needed - indoor temp below comfort zone
@@ -1143,9 +1144,10 @@ action:
                 {% if adaptive_air_velocity_val %}Fan: {{ current_fan_mode }}{% if fan_mode_needs_change %} → {{ optimal_fan_speed }}{% endif %},{% endif %}
                 Compliance: {{ compliance_notes }}
   
-  # Always update previous temperature helper for next run (outside of choose blocks)
+  # Update previous temperature helper only when NO window/door detection occurs 
+  # (when detection occurs, helper is updated in the detection branch above)
   - condition: template
-    value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+    value_template: "{{ not window_door_open_detected and previous_temp_helper_id and previous_temp_helper_id != '' }}"
   - service: input_number.set_value
     target:
       entity_id: "{{ previous_temp_helper_id }}"
@@ -1159,7 +1161,7 @@ action:
         (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
         Window detection: {{ 'ON' if window_open_detection_val else 'OFF' }}
         {% if window_open_detection_val %}(threshold: {{ window_open_temp_change_val }}°C){% endif %}
-        Detection result: {{ 'TRIGGERED' if window_door_open_detected else 'NO CHANGE' }}
+        Detection result: {{ 'NO DETECTION - Helper Updated' if not window_door_open_detected else 'TRIGGERED - Helper Updated in Detection Branch' }}
         {% if window_open_detection_val %}
         Drop: {{ (previous_indoor_temp - indoor_temp) | round(2) }}°C, Rise: {{ (indoor_temp - previous_indoor_temp) | round(2) }}°C
         {% endif %}
