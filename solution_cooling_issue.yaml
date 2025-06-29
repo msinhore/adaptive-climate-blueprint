@@ -40,9 +40,7 @@ AC Temperatura Alvo: {{ state_attr('climate.seu_ac', 'temperature') }}°C
 # === TRV STATUS (se configurado) ===
 TRV Estado: {{ states('climate.radiator_sala') }}
 TRV HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }}
-TRV Switch Window Detection: {{ states('switch.radiator_sala_open_window') }} (enabled/disabled)
-# Verificar se existe este sensor no seu setup:
-# TRV Window Detected: {{ states('sensor.radiator_sala_open_window') if states('sensor.radiator_sala_open_window') != 'unavailable' else 'N/A' }}
+TRV Window Detected: {{ states('binary_sensor.radiator_sala_open_window') }} (ON=janela aberta)
 
 # === AUTOMAÇÃO ===
 Automação Estado: {{ states('automation.seu_adaptive_climate') }}
@@ -71,21 +69,24 @@ natural_ventilation_enable: false
 natural_ventilation_threshold: 1.0  # Ao invés do padrão 2.0
 ```
 
-### Solução 3: Configuração TRV Correta 
+### Solução 3: Configuração TRV Correta (OFICIAL)
 ```yaml
-# Para Sonoff TRVZB, primeiro verifique no Developer Tools > States
-# quais entidades existem. Procure por:
-# binary_sensor.radiator_sala_window_detection
-# sensor.radiator_sala_open_window
-# ou similar
+# CONFIGURAÇÃO OFICIAL baseada na documentação Zigbee2MQTT:
+trv_window_open_sensor: binary_sensor.radiator_sala_open_window
 
-# Se existir sensor específico:
-trv_window_open_sensor: binary_sensor.radiator_sala_window_detection
+# Este sensor detecta automaticamente:
+# - Queda de temperatura > 1.5°C em 4.5 minutos
+# - Estados: ON = janela aberta detectada, OFF = janela fechada
+# - Funciona independente de configuração manual
+```
 
-# Se não existir sensor específico (mais comum):
-trv_window_open_sensor: ""  # Deixar vazio
+### Solução 4: Verificar se TRV detectou janela aberta
+```yaml
+# Execute no Developer Tools > Templates:
+TRV Window Status: {{ states('binary_sensor.radiator_sala_open_window') }}
 
-# O blueprint detectará janela aberta via mudanças no hvac_action
+# Se retornar "ON", o TRV está pausando aquecimento por detectar janela aberta
+# Isso pode estar afetando o sistema de cooling também
 ```
 
 ### Solução 4: Verificar Logs da Automação

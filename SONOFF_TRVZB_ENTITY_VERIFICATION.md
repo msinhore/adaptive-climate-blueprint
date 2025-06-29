@@ -8,36 +8,39 @@ No Home Assistant, navegue para **Developer Tools → States** e procure por ent
 
 ### 2. Entidades Comuns do Sonoff TRVZB
 
-#### ✅ Entidades que SEMPRE existem:
+#### ✅ Entidades que SEMPRE existem (conforme doc oficial Zigbee2MQTT):
 ```
-climate.radiator_sala                          # Controle principal
-number.radiator_sala_valve_opening_degree      # Posição da válvula
-number.radiator_sala_valve_closing_degree      # Fechamento da válvula
-switch.radiator_sala_open_window               # Controle detecção janela
-sensor.radiator_sala_closing_steps             # Atividade do motor
-sensor.radiator_sala_battery                   # Nível da bateria
+climate.radiator_sala                           # Controle principal (thermostat)
+binary_sensor.radiator_sala_open_window         # Detecção automática janela (>1.5°C drop em 4.5min)
+number.radiator_sala_valve_opening_degree       # Posição da válvula (0-100%)
+number.radiator_sala_valve_closing_degree       # Fechamento da válvula (0-100%)
+sensor.radiator_sala_closing_steps              # Passos do motor para fechar
+sensor.radiator_sala_idle_steps                 # Passos de calibração
+sensor.radiator_sala_battery                    # Nível da bateria
+number.radiator_sala_frost_protection_temperature # Proteção anti-congelamento
+number.radiator_sala_external_temperature_input # Entrada temp externa
+number.radiator_sala_temperature_accuracy       # Precisão do controle (-0.2 a -1°C)
 ```
 
-#### ❓ Entidades que PODEM existir (dependem da configuração):
+#### ❌ Entidades que NÃO existem (confusão de documentação):
 ```
-binary_sensor.radiator_sala_window_detection   # Estado real da detecção
-sensor.radiator_sala_open_window              # Outro formato do sensor
-sensor.radiator_sala_window_state             # Variação do nome
+switch.radiator_sala_open_window               # NÃO EXISTE - era erro na documentação
+sensor.radiator_sala_open_window              # NÃO EXISTE - o correto é binary_sensor
 ```
 
 ### 3. Para o Blueprint Adaptive Climate
 
-#### Configuração SEGURA (sempre funciona):
+#### Configuração OFICIAL (baseada na doc Zigbee2MQTT):
 ```yaml
-# TRV básico - sempre funciona
+# TRV completo - configuração oficial
 primary_climate_entity: climate.radiator_sala
 enable_trv_efficiency_monitoring: true
 trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 
-# Window detection - deixe vazio se não tiver sensor específico
-trv_window_open_sensor: ""
+# Window detection - entidade oficial
+trv_window_open_sensor: binary_sensor.radiator_sala_open_window
 ```
 
 #### Se você ENCONTRAR um sensor de janela:
