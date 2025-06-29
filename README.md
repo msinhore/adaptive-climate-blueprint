@@ -25,13 +25,17 @@
 
 ## ⚡ Key Benefits
 
-- **💰 Lower Bills**: 15-30% energy savings in testing
+- **💰 Lower Bills**: 15-30% energy savings in testing, up to 50% with advanced features
 - **🔄 Fully Automatic**: No daily thermostat adjustments needed
 - **🏠 Works with SmartIR**: Compatible with existing AC/heating setups
 - **🌡️ Always Comfortable**: ASHRAE 55 adaptive comfort standards
 - **⏰ Occupancy Smart**: Saves energy when you're away
 - **🌤️ Weather Integration**: Uses free weather services (no outdoor sensors needed)
 - **🎚️ Flexible Sensors**: Supports physical sensors, weather data, or manual input
+- **🔥❄️ Dual Climate Control**: TRV + AC hybrid heating optimization (NEW v2.0)
+- **🪟 Window Detection**: Automatic HVAC pause when windows/doors open (NEW v2.0)
+- **🧠 Smart Rounding**: Intelligent temperature rounding for optimal energy efficiency (NEW v2.0)
+- **🌿 Seasonal Logic**: Context-aware heating/cooling mode selection (NEW v2.0)
 
 ## 🚀 Quick Setup (5 Minutes)
 

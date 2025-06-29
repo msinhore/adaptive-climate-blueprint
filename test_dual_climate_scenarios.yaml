@@ -1,0 +1,125 @@
+# Test Scenarios for Dual Climate Control (TRV + AC)
+# Use these examples in Home Assistant Developer Tools → Templates to test logic
+
+# Scenario 1: TRV Priority - Very Cold Outside
+# Expected: TRV as primary, AC off (not needed)
+dual_climate_control_val: true
+primary_climate_entity_id: "climate.trv_living_room"
+secondary_heating_threshold_val: 2.0
+trv_priority_temp_difference_val: 5.0
+indoor_temp: 18.0
+target_temp: 21.0
+outdoor_temp: 0.0
+
+# Template test:
+temp_diff_below_target_1: "{{ 21.0 - 18.0 }}"  # 3.0°C
+outdoor_indoor_diff_1: "{{ 18.0 - 0.0 }}"      # 18.0°C  
+use_trv_priority_1: "{{ 18.0 >= 5.0 }}"        # true
+need_secondary_heating_1: "{{ 3.0 >= 2.0 }}"   # true
+# Result: TRV heats to 21°C, AC supports at 20°C
+
+---
+
+# Scenario 2: AC Priority - Mild Weather
+# Expected: AC as primary, TRV as background support
+dual_climate_control_val: true
+indoor_temp: 19.0
+target_temp: 21.0
+outdoor_temp: 12.0
+
+# Template test:
+temp_diff_below_target_2: "{{ 21.0 - 19.0 }}"  # 2.0°C
+outdoor_indoor_diff_2: "{{ 19.0 - 12.0 }}"     # 7.0°C
+use_trv_priority_2: "{{ 7.0 >= 5.0 }}"         # true
+need_secondary_heating_2: "{{ 2.0 >= 2.0 }}"   # true
+# Result: TRV to 21°C, AC supports at 20°C (still TRV priority due to 7°C diff)
+
+---
+
+# Scenario 3: AC Primary - Small Temperature Difference  
+# Expected: AC as primary, TRV as support
+dual_climate_control_val: true
+indoor_temp: 19.5
+target_temp: 21.0
+outdoor_temp: 16.0
+
+# Template test:
+temp_diff_below_target_3: "{{ 21.0 - 19.5 }}"  # 1.5°C
+outdoor_indoor_diff_3: "{{ 19.5 - 16.0 }}"     # 3.5°C
+use_trv_priority_3: "{{ 3.5 >= 5.0 }}"         # false (AC priority)
+need_secondary_heating_3: "{{ 1.5 >= 2.0 }}"   # false (no secondary needed)
+# Result: AC heats to 21°C, TRV supports at 21.5°C
+
+---
+
+# Scenario 4: Maximum Heating - Very Cold Indoor
+# Expected: Both systems at full capacity
+dual_climate_control_val: true
+indoor_temp: 16.0
+target_temp: 21.0
+outdoor_temp: 5.0
+
+# Template test:
+temp_diff_below_target_4: "{{ 21.0 - 16.0 }}"  # 5.0°C
+outdoor_indoor_diff_4: "{{ 16.0 - 5.0 }}"      # 11.0°C
+use_trv_priority_4: "{{ 11.0 >= 5.0 }}"        # true (TRV priority)
+need_secondary_heating_4: "{{ 5.0 >= 2.0 }}"   # true (secondary needed)
+# Result: TRV to 21°C, AC supports at 20°C (maximum heating)
+
+---
+
+# Scenario 5: Disabled Dual Control
+# Expected: Standard single climate control
+dual_climate_control_val: false
+indoor_temp: 18.0
+target_temp: 21.0
+outdoor_temp: 5.0
+# Result: Only main climate entity heats to 21°C
+
+---
+
+# Test Complete Blueprint Variables (for Developer Tools → Templates)
+# Copy this template and adjust values to test different scenarios:
+
+"""
+{% set dual_climate_control_val = true %}
+{% set primary_climate_entity_id = "climate.trv_living_room" %}
+{% set secondary_heating_threshold_val = 2.0 %}
+{% set trv_priority_temp_difference_val = 5.0 %}
+{% set indoor_temp = 18.0 %}
+{% set target_temp = 21.0 %}
+{% set outdoor_temp = 0.0 %}
+
+{% set temp_diff_below_target = target_temp - indoor_temp %}
+{% set outdoor_indoor_diff = indoor_temp - outdoor_temp %}
+{% set use_trv_priority = outdoor_indoor_diff >= trv_priority_temp_difference_val %}
+{% set need_secondary_heating = temp_diff_below_target >= secondary_heating_threshold_val %}
+
+Dual Climate Test Results:
+- Indoor Temperature: {{ indoor_temp }}°C
+- Target Temperature: {{ target_temp }}°C  
+- Outdoor Temperature: {{ outdoor_temp }}°C
+- Temperature Difference Below Target: {{ temp_diff_below_target }}°C
+- Outdoor-Indoor Difference: {{ outdoor_indoor_diff }}°C
+- Use TRV Priority: {{ use_trv_priority }}
+- Need Secondary Heating: {{ need_secondary_heating }}
+
+{% if dual_climate_control_val and primary_climate_entity_id != '' %}
+{% if use_trv_priority %}
+Strategy: TRV Priority
+- Primary: TRV heats to {{ target_temp }}°C
+{% if need_secondary_heating %}
+- Secondary: AC supports at {{ target_temp - 1 }}°C
+{% else %}
+- Secondary: AC turned off (not needed)
+{% endif %}
+{% else %}
+Strategy: AC Priority  
+- Primary: AC heats to {{ target_temp }}°C
+- Secondary: TRV supports at {{ target_temp + 0.5 }}°C
+{% endif %}
+{% else %}
+Strategy: Standard Single Climate Control
+- Only main climate entity heats to {{ target_temp }}°C
+{% endif %}
+"""
