@@ -781,14 +781,6 @@ action:
                 Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
-          # Update previous temperature helper for next run
-          - condition: template
-            value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
-          - service: input_number.set_value
-            target:
-              entity_id: "{{ previous_temp_helper_id }}"
-            data:
-              value: "{{ indoor_temp }}"
       
       # Natural ventilation mode - turn off HVAC
       - conditions:
@@ -1136,6 +1128,23 @@ action:
                 {% if comfort_precision_mode_val %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{ humidity_offset }}°C,{% endif %}
                 {% if adaptive_air_velocity_val %}Fan: {{ current_fan_mode }}{% if fan_mode_needs_change %} → {{ optimal_fan_speed }}{% endif %},{% endif %}
                 Compliance: {{ compliance_notes }}
+  
+  # Always update previous temperature helper for next run (outside of choose blocks)
+  - condition: template
+    value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+  - service: input_number.set_value
+    target:
+      entity_id: "{{ previous_temp_helper_id }}"
+    data:
+      value: "{{ indoor_temp }}"
+  - service: logbook.log
+    data:
+      name: "Adaptive Climate - State Update"
+      message: >
+        Updated previous temperature helper: {{ previous_temp_helper_id }} = {{ indoor_temp }}°C
+        (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
+        Window detection: {{ 'ON' if window_open_detection_val else 'OFF' }}
+        {% if window_open_detection_val %}(threshold: {{ window_open_temp_change_val }}°C){% endif %}
 
 mode: single
 max_exceeded: silent
