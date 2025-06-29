@@ -116,11 +116,25 @@ name: "Window Detection (TRV)"
 icon: mdi:window-open-variant
 ```
 
-## ⚠️ Troubleshooting: Propriedade open_window Não Encontrada
+## ⚠️ DESCOBERTA IMPORTANTE: Atributos Viessmann Não Suportados
 
-### Se Você Não Encontrar `open_window`
+### Investigação no Zigbee Device
 
-Isso é **comum** e pode ter várias causas:
+Se você verificar no **Zigbee2MQTT → Device → Reporting/Endpoint 1/hvacThermostat**, pode encontrar:
+- `viessmannWindowOpenForce`
+- `viessmannWindowOpenInternal`
+
+**PORÉM**: Estes retornam `failed (Status 'UNSUPPORTED_ATTRIBUTE')`
+
+### O Que Isso Significa
+
+1. **O hardware TRV TEM window detection** (atributos Viessmann existem)
+2. **O Zigbee2MQTT não consegue acessá-los** (UNSUPPORTED_ATTRIBUTE)
+3. **Por isso `open_window` não aparece** como propriedade do climate entity
+
+### Soluções Práticas
+
+Como os atributos Viessmann não são acessíveis via Zigbee2MQTT, use estas alternativas:
 
 #### 1. Verificar Todas as Propriedades Disponíveis
 
@@ -138,31 +152,42 @@ Ou liste todos os atributos:
 {% endfor %}
 ```
 
-#### 2. Verificar no Zigbee2MQTT
+#### 2. Verificar Alternativas no Zigbee2MQTT
 
-Se você usar Zigbee2MQTT, vá em:
-- **Zigbee2MQTT → Devices → Seu TRV**
-- Procure por configurações como:
-  - `window_detection`
-  - `open_window_temperature`
-  - `window_open`
+**Situação Confirmada**: Os atributos `viessmannWindowOpenForce` e `viessmannWindowOpenInternal` existem no hardware mas retornam `UNSUPPORTED_ATTRIBUTE` no Zigbee2MQTT.
 
-#### 3. Habilitar Window Detection
+**Possíveis Workarounds**:
+- Aguardar atualização do Zigbee2MQTT para suportar atributos Viessmann
+- Monitorar mudanças súbitas no `hvac_action` ou `local_temperature`
+- Usar sensor físico dedicado
 
-Algumas opções para habilitar:
+#### 3. Alternativas Funcionais (Baseadas na Descoberta)
 
-**Via MQTT (se usando Zigbee2MQTT):**
-```bash
-# Publicar comando para habilitar
-mosquitto_pub -h localhost -t "zigbee2mqtt/radiator_sala/set" -m '{"window_detection": "ON"}'
+Como os atributos Viessmann não são acessíveis, mas o TRV tem detecção interna:
+
+**Opção A - Monitorar HVAC Action (Recomendado):**
+```yaml
+template:
+  - binary_sensor:
+      - name: "Sala Window Open HVAC Detection"
+        unique_id: sala_window_hvac_detection
+        state: >
+          {% set hvac = state_attr('climate.radiator_sala', 'hvac_action') %}
+          {% set temp = states('climate.radiator_sala') | float %}
+          {{ hvac == 'idle' and temp < 18 }}
+        device_class: window
 ```
 
-**Via Home Assistant Developer Tools → Services:**
+**Opção B - Sensor Físico (Mais Confiável):**
 ```yaml
-service: mqtt.publish
-data:
-  topic: "zigbee2mqtt/radiator_sala/set"
-  payload: '{"window_detection": "ON"}'
+# Use um sensor Zigbee dedicado de porta/janela
+trv_window_open_sensor: binary_sensor.porta_sala_contact
+```
+
+**Opção C - Desabilitar (Mais Simples):**
+```yaml
+# No blueprint, deixe vazio - funciona perfeitamente
+trv_window_open_sensor: ""
 ```
 
 #### 4. Alternativas Práticas

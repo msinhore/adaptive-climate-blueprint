@@ -31,9 +31,18 @@ Cole estes templates um por vez para verificar o que seu TRV suporta:
 - `open_window`: `true` ou `false`
 - Você pode usar o template sensor
 
+## ✅ DESCOBERTA CONFIRMADA: Atributos Viessmann
+
+O Sonoff TRVZB **TEM** window detection hardware:
+- `viessmannWindowOpenForce` 
+- `viessmannWindowOpenInternal`
+
+**PORÉM**: Zigbee2MQTT retorna `UNSUPPORTED_ATTRIBUTE`
+
 ### ❌ Se NÃO Funcionar:
 - `open_window`: `None` ou erro
-- Use uma das alternativas abaixo
+- Atributos Viessmann não acessíveis via Z2M
+- Use alternativas inteligentes
 
 ## Alternativas Práticas (Escolha 1)
 
@@ -51,19 +60,22 @@ enable_trv_efficiency_monitoring: true
 trv_window_open_sensor: binary_sensor.porta_sala_contact
 ```
 
-### Opção 3: Detecção por Queda de Temperatura
+### Opção 3: Detecção INTELIGENTE por Comportamento
 ```yaml
-# configuration.yaml - Template sensor
+# configuration.yaml - Template que detecta quando TRV para inadequadamente
 template:
   - binary_sensor:
-      - name: "Sala Window Open Temperature Drop"
-        unique_id: sala_window_temp_drop
+      - name: "Sala Window Smart Detection"
+        unique_id: sala_window_smart_detection
         state: >
-          {% set current_temp = states('sensor.temperatura_sala') | float(0) %}
-          {% set old_temp = states('sensor.temperatura_sala') %}
-          {% set temp_history = state_attr('sensor.temperatura_sala', 'history') %}
-          {{ (current_temp < (current_temp + 1.5)) if temp_history else false }}
+          {% set hvac = state_attr('climate.radiator_sala', 'hvac_action') %}
+          {% set current = state_attr('climate.radiator_sala', 'current_temperature') | float(20) %}
+          {% set target = state_attr('climate.radiator_sala', 'temperature') | float(21) %}
+          {{ hvac == 'idle' and (target - current) > 1.5 }}
         device_class: window
+
+# No blueprint:
+trv_window_open_sensor: binary_sensor.sala_window_smart_detection
 ```
 
 ## Configuração Recomendada (Sem Window Detection)
