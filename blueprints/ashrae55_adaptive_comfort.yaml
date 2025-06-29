@@ -771,400 +771,112 @@ condition:
          states(outdoor_sensor_id) not in ['unavailable', 'unknown'] }}
 
 action:
-  - choose:
-      # Window/Door open detection - pause HVAC but still update helper when detection occurs
-      - conditions:
-          - condition: template
-            value_template: "{{ window_door_open_detected }}"
-        sequence:
-          # Turn off main climate entity
-          - service: climate.turn_off
-            target:
-              entity_id: !input climate_entity
-          # Turn off TRV if dual climate control is enabled
-          - condition: template
-            value_template: "{{ dual_climate_control_val and primary_climate_entity_id != '' }}"
-          - service: climate.turn_off
-            target:
-              entity_id: "{{ primary_climate_entity_id }}"
-          - service: logbook.log
-            data:
-              name: "Adaptive Climate Control"
-              message: >
-                Window/door open detected! HVAC paused for {{ window_open_pause_duration_val }} minutes.
-                Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
-                Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
-                Resume time: {{ window_open_pause_until }}
-          
-          # Update helper only when detection occurs (real detection)
-          - condition: template
-            value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
-          - service: input_number.set_value
-            target:
-              entity_id: "{{ previous_temp_helper_id }}"
-            data:
-              value: "{{ indoor_temp }}"
-          - service: logbook.log
-            data:
-              name: "Adaptive Climate - Detection Update"
-              message: >
-                Window/door detection triggered - Updated previous temperature helper: {{ previous_temp_helper_id }} = {{ indoor_temp }}°C
-                (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
-      
-      # Normal climate control - ALWAYS execute if window/door not detected
-      # This ensures all ASHRAE 55, comfort, occupancy, and ventilation rules are applied
-      # (Natural ventilation is handled within the normal logic, not as a separate blocking condition)
-      - conditions:
-          - condition: template
-            value_template: "{{ not window_door_open_detected }}"
-        sequence:
-          - choose:
-              # Heating needed - indoor temp below comfort zone
-              - conditions:
-                  - condition: template
-                    value_template: "{{ indoor_temp < comfort_temp_min }}"
-                sequence:
-                  - choose:
-                      # Summer season: if indoor < target, use ventilation instead of heating
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ is_summer_season and indoor_temp < target_temp }}"
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "low"
-                      
-                      # Dual climate control mode (TRV + AC)
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ dual_climate_control_val and primary_climate_entity_id != '' }}"
-                        sequence:
-                          # Calculate temperature difference and determine control strategy
-                          - variables:
-                              temp_diff_below_target: "{{ target_temp - indoor_temp }}"
-                              outdoor_indoor_diff: "{{ indoor_temp - outdoor_temp }}"
-                              use_trv_priority: "{{ use_trv_priority_enhanced }}"
-                              need_secondary_heating: "{{ temp_diff_below_target >= secondary_heating_threshold_val }}"
-                          
-                          # Enhanced TRV logging with efficiency data
-                          - service: logbook.log
-                            data:
-                              name: "Adaptive Dual Climate"
-                              message: >
-                                {% if enable_trv_efficiency_monitoring_val %}
-                                Dual heating decision (TRV Enhanced): Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
-                                TRV: Local {{ trv_current_temp }}°C, Valve {{ trv_valve_opening }}%, Action {{ trv_hvac_action }}, Efficient {{ trv_efficiency }}.
-                                Temp diff below target: {{ temp_diff_below_target }}°C, Outdoor-Indoor diff: {{ outdoor_indoor_diff }}°C.
-                                TRV priority (enhanced): {{ use_trv_priority }}, Need secondary: {{ need_secondary_heating }}
-                                {% else %}
-                                Dual heating decision: Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
-                                Temp diff below target: {{ temp_diff_below_target }}°C, Outdoor-Indoor diff: {{ outdoor_indoor_diff }}°C.
-                                TRV priority: {{ use_trv_priority }}, Need secondary: {{ need_secondary_heating }}
-                                {% endif %}
-                          
-                          - choose:
-                              # Use TRV as primary when outdoor is much colder (better efficiency)
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ use_trv_priority }}"
-                                sequence:
-                                  # Activate TRV
-                                  - service: climate.set_hvac_mode
-                                    target:
-                                      entity_id: "{{ primary_climate_entity_id }}"
-                                    data:
-                                      hvac_mode: heat
-                                  - condition: template
-                                    value_template: "{{ temperature_needs_change }}"
-                                  - service: climate.set_temperature
-                                    target:
-                                      entity_id: "{{ primary_climate_entity_id }}"
-                                    data:
-                                      temperature: "{{ target_temp }}"
-                                  
-                                  # Use AC as secondary heating only if temperature difference is significant
-                                  - choose:
-                                      - conditions:
-                                          - condition: template
-                                            value_template: "{{ need_secondary_heating }}"
-                                        sequence:
-                                          - service: climate.set_hvac_mode
-                                            target:
-                                              entity_id: !input climate_entity
-                                            data:
-                                              hvac_mode: heat
-                                          - service: climate.set_temperature
-                                            target:
-                                              entity_id: !input climate_entity
-                                            data:
-                                              temperature: "{{ target_temp - 1 }}"  # AC target 1°C lower to support TRV
-                                          - service: climate.set_fan_mode
-                                            target:
-                                              entity_id: !input climate_entity
-                                            data:
-                                              fan_mode: "low"
-                                      # Turn off AC if not needed as secondary
-                                      - conditions: []
-                                        sequence:
-                                          - service: climate.turn_off
-                                            target:
-                                              entity_id: !input climate_entity
-                              
-                              # Use AC as primary when outdoor temp is closer to indoor (better for quick response)
-                              - conditions: []
-                                sequence:
-                                  # Activate AC heating
-                                  - service: climate.set_hvac_mode
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      hvac_mode: heat
-                                  - condition: template
-                                    value_template: "{{ temperature_needs_change }}"
-                                  - service: climate.set_temperature
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      temperature: "{{ target_temp }}"
-                                  - condition: template
-                                    value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                                  - service: climate.set_fan_mode
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      fan_mode: "low"
-                                  
-                                  # Use TRV as supplementary heating
-                                  - service: climate.set_hvac_mode
-                                    target:
-                                      entity_id: "{{ primary_climate_entity_id }}"
-                                    data:
-                                      hvac_mode: heat
-                                  - service: climate.set_temperature
-                                    target:
-                                      entity_id: "{{ primary_climate_entity_id }}"
-                                    data:
-                                      temperature: "{{ target_temp + 0.5 }}"  # TRV target slightly higher for background support
-                      
-                      # Standard single climate control mode  
-                      - conditions: []
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: heat
-                          # Set temperature if needed
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                          # Set fan speed for heating only if needed
-                          - condition: template
-                            value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "low"
-              
-              # Cooling needed - indoor temp above comfort zone
-              - conditions:
-                  - condition: template
-                    value_template: "{{ indoor_temp > comfort_temp_max }}"
-                sequence:
-                  - choose:
-                      # Winter season: if indoor > target, use ventilation instead of cooling
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ is_winter_season and indoor_temp > target_temp }}"
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "medium"
-                      
-                      # Normal cooling mode
-                      - conditions: []
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: cool
-                          # Set temperature if needed
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                          # Set adaptive fan speed for cooling only if needed
-                          - condition: template
-                            value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "{{ optimal_fan_speed }}"
-              
-              # Within comfort zone - Adaptive comfort compliant intelligent mode selection
-              - conditions:
-                  - condition: template
-                    value_template: >
-                      {{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max }}
-                sequence:
-                  - choose:
-                      # Adaptive natural ventilation opportunity: outdoor > comfort_min > indoor
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {{ outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp }}
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "medium"
-                      
-                      # Adaptive natural ventilation opportunity: outdoor < comfort_max < indoor
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {{ outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp }}
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "low"
-                      
-                      # Within comfort zone but outdoor significantly warmer - minimal cooling
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ (outdoor_temp - indoor_temp) > 3 }}"
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: cool
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                      
-                      # Within comfort zone but outdoor significantly cooler - minimal heating
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ (indoor_temp - outdoor_temp) > 3 }}"
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: heat
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                      
-                      # Default: within comfort zone, maintain with auto mode (Adaptive comfort compliant)
-                      - conditions: []
-                        sequence:
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: auto
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ adaptive_comfort_temp }}"
-                  
-                  # Set optimal fan speed only if needed for comfort zone scenarios
-                  - condition: template
-                    value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                  - service: climate.set_fan_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      fan_mode: "auto"
-          
-          - service: logbook.log
-            data:
-              name: "Adaptive Climate Control"
-              message: >
-                Adaptive comfort compliant climate control applied. 
-                Target: {{ target_temp }}°C (Raw: {{ target_temp_raw | round(1) }}°C, Current: {{ current_temperature }}°C),
-                Smart rounding: {% if outdoor_temp > indoor_temp %}DOWN (outdoor warmer){% elif outdoor_temp < indoor_temp %}UP (outdoor cooler){% else %}STANDARD{% endif %},
-                Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C,
-                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C (adaptive temp: {{ adaptive_comfort_temp }}°C),
-                HVAC Mode: {% if indoor_temp < comfort_temp_min %}{% if is_summer_season and indoor_temp < target_temp %}FAN (summer seasonal optimization){% else %}HEAT (below comfort zone){% endif %}{% elif indoor_temp > comfort_temp_max %}{% if is_winter_season and indoor_temp > target_temp %}FAN (winter seasonal optimization){% else %}COOL (above comfort zone){% endif %}{% elif outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp %}FAN (natural ventilation opportunity){% elif outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp %}FAN (natural ventilation opportunity){% elif (outdoor_temp - indoor_temp) > 3 %}COOL (outdoor >>3°C warmer){% elif (indoor_temp - outdoor_temp) > 3 %}HEAT (outdoor >>3°C cooler){% else %}AUTO (within comfort zone){% endif %} (was {{ current_hvac_mode }}),
-                Season: {% if is_winter_season %}Winter (outdoor < 18°C){% elif is_summer_season %}Summer (outdoor > 26°C){% else %}Mid-season{% endif %},
-                Occupancy: {{ 'Occupied' if is_occupied else 'Unoccupied' }},
-                Category: {{ comfort_category_val }} (±{{ comfort_tolerance }}°C),
-                {% if comfort_precision_mode_val %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{ humidity_offset }}°C,{% endif %}
-                {% if adaptive_air_velocity_val %}Fan: {{ current_fan_mode }}{% if fan_mode_needs_change %} → {{ optimal_fan_speed }}{% endif %},{% endif %}
-                Compliance: {{ compliance_notes }}
-  
-  # Update previous temperature helper only when NO window/door detection occurs 
-  # (when detection occurs, helper is updated in the detection branch above)
-  - condition: template
-    value_template: "{{ not window_door_open_detected and previous_temp_helper_id and previous_temp_helper_id != '' }}"
-  - service: input_number.set_value
-    target:
-      entity_id: "{{ previous_temp_helper_id }}"
-    data:
-      value: "{{ indoor_temp }}"
-  - service: logbook.log
-    data:
-      name: "Adaptive Climate - State Update"
-      message: >
-        Updated previous temperature helper: {{ previous_temp_helper_id }} = {{ indoor_temp }}°C
-        (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
-        Window detection: {{ 'ON' if window_open_detection_val else 'OFF' }}
-        {% if window_open_detection_val %}(threshold: {{ window_open_temp_change_val }}°C){% endif %}
-        Detection result: {{ 'NO DETECTION - Helper Updated' if not window_door_open_detected else 'TRIGGERED - Helper Updated in Detection Branch' }}
-        {% if window_open_detection_val %}
-        Drop: {{ (previous_indoor_temp - indoor_temp) | round(2) }}°C, Rise: {{ (indoor_temp - previous_indoor_temp) | round(2) }}°C
-        {% endif %}
+    - choose:
+        # Window/Door open detection - pausa HVAC, mas só atualiza helper se threshold for excedido
+        - conditions:
+            - condition: template
+              value_template: "{{ window_door_open_detected }}"
+          sequence:
+            - service: climate.turn_off
+              target:
+                entity_id: !input climate_entity
+            - condition: template
+              value_template: "{{ dual_climate_control_val and primary_climate_entity_id != '' }}"
+            - service: climate.turn_off
+              target:
+                entity_id: "{{ primary_climate_entity_id }}"
+            - service: logbook.log
+              data:
+                name: "Adaptive Climate Control"
+                message: >
+                  Window/door open detected! HVAC paused for {{ window_open_pause_duration_val }} minutes.
+                  Temperature change: {{ ((previous_indoor_temp - indoor_temp) | abs) | round(1) }}°C.
+                  Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
+                  Resume time: {{ window_open_pause_until }}
+            # Atualiza helper SOMENTE após detecção real
+            - condition: template
+              value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+            - service: input_number.set_value
+              target:
+                entity_id: "{{ previous_temp_helper_id }}"
+              data:
+                value: "{{ indoor_temp }}"
 
-mode: single
-max_exceeded: silent
+        # Normal climate control (ASHRAE 55, ventilação, ocupação, etc.)
+        - conditions: []
+          sequence:
+            # Heating needed - indoor temp below comfort zone
+            - choose:
+                - conditions:
+                    - condition: template
+                      value_template: "{{ indoor_temp < comfort_temp_min }}"
+                  sequence:
+                    - choose:
+                        - conditions:
+                            - condition: template
+                              value_template: "{{ is_summer_season and indoor_temp < target_temp }}"
+                          sequence:
+                            - service: climate.set_hvac_mode
+                              target:
+                                entity_id: !input climate_entity
+                              data:
+                                hvac_mode: fan_only
+                            - service: climate.set_fan_mode
+                              target:
+                                entity_id: !input climate_entity
+                              data:
+                                fan_mode: "low"
+                        - conditions:
+                            - condition: template
+                              value_template: "{{ dual_climate_control_val and primary_climate_entity_id != '' }}"
+                          sequence:
+                            # ...lógica dual climate control...
+                        - conditions: []
+                          sequence:
+                            - service: climate.set_hvac_mode
+                              target:
+                                entity_id: !input climate_entity
+                              data:
+                                hvac_mode: heat
+                            - condition: template
+                              value_template: "{{ temperature_needs_change }}"
+                            - service: climate.set_temperature
+                              target:
+                                entity_id: !input climate_entity
+                              data:
+                                temperature: "{{ target_temp }}"
+                            - condition: template
+                              value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
+                            - service: climate.set_fan_mode
+                              target:
+                                entity_id: !input climate_entity
+                              data:
+                                fan_mode: "low"
+                # Cooling needed - indoor temp above comfort zone
+                - conditions:
+                    - condition: template
+                      value_template: "{{ indoor_temp > comfort_temp_max }}"
+                  sequence:
+                    # ...lógica de resfriamento, ventilação natural, etc...
+                # Dentro da zona de conforto
+                - conditions:
+                    - condition: template
+                      value_template: "{{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max }}"
+                  sequence:
+                    # ...lógica de ventilação adaptativa, auto, etc...
+            # Atualiza helper SEMPRE ao final, se não houve detecção de janela
+            - condition: template
+              value_template: "{{ previous_temp_helper_id and previous_temp_helper_id != '' }}"
+            - service: input_number.set_value
+              target:
+                entity_id: "{{ previous_temp_helper_id }}"
+              data:
+                value: "{{ indoor_temp }}"
+            - service: logbook.log
+              data:
+                name: "Adaptive Climate - State Update"
+                message: >
+                  Updated previous temperature helper: {{ previous_temp_helper_id }} = {{ indoor_temp }}°C
+                  (was {{ previous_indoor_temp }}°C, change: {{ temp_change_rate }}°C)
+                  Window detection: {{ 'ON' if window_open_detection_val else 'OFF' }}
+                  {% if window_open_detection_val %}(threshold: {{ window_open_temp_change_val }}°C){% endif %}
