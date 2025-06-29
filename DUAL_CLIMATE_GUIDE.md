@@ -14,6 +14,10 @@ This creates a hybrid heating system that automatically selects the most efficie
 - **Faster Heating**: Dual systems can work together for rapid temperature recovery
 - **Efficiency Optimization**: Prioritizes TRV when outdoor temperatures are very cold (better efficiency)
 - **Smart Coordination**: Prevents device conflicts with coordinated temperature targets
+- **Real-Time TRV Monitoring**: Advanced sensor integration detects TRV performance issues
+- **Enhanced Window Detection**: Combines blueprint and TRV window detection for maximum accuracy
+- **Automatic Problem Detection**: Identifies valve issues, low efficiency, and system problems
+- **Performance-Based Decisions**: Uses actual TRV performance data, not just temperature thresholds
 
 ## Configuration Parameters
 
@@ -22,6 +26,13 @@ This creates a hybrid heating system that automatically selects the most efficie
 2. **Primary Climate Entity (TRV)**: Select your TRV or main heating device
 3. **Secondary Heating Threshold**: Temperature difference that triggers secondary heating (1-5°C, default: 2°C)
 4. **TRV Priority Temperature Threshold**: Outdoor-indoor difference that prioritizes TRV (2-10°C, default: 5°C)
+
+### Advanced TRV Monitoring (Optional)
+5. **Enable TRV Efficiency Monitoring**: Activate advanced TRV sensor integration (default: disabled)
+6. **TRV Valve Opening Degree Sensor**: Monitor valve position for efficiency analysis
+7. **TRV Valve Closing Degree Sensor**: Monitor valve closing capability
+8. **TRV Window Open Detection**: Use TRV's built-in window open detection
+9. **TRV Running Steps Sensor**: Monitor TRV motor activity for performance analysis
 
 ### Parameter Details
 
@@ -36,6 +47,21 @@ This creates a hybrid heating system that automatically selects the most efficie
 - Based on principle that TRV/radiators are more efficient in very cold weather
 - **Recommended**: 5°C for optimal efficiency balance
 
+#### Advanced TRV Monitoring (Optional)
+- **Enable TRV Efficiency Monitoring**: Activates real-time TRV performance analysis
+- **Valve Position Sensors**: Monitor opening/closing degrees for efficiency calculations  
+- **Window Open Detection**: Integrates TRV's built-in window detection with blueprint logic
+- **Running Steps Sensor**: Tracks TRV motor activity to detect performance issues
+- **Efficiency Algorithm**: Automatically detects when TRV is working inefficiently
+
+**Example TRV Entities (Sonoff TRVZB)**:
+```yaml
+trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
+trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree  
+trv_window_open_sensor: switch.radiator_sala_open_window
+trv_running_steps_sensor: sensor.radiator_sala_closing_steps
+```
+
 ## How It Works
 
 ### Decision Logic
@@ -45,6 +71,20 @@ The system evaluates two key factors:
 2. **Outdoor-Indoor Temperature Difference**: Indicates heating load and efficiency considerations
 
 ### Strategy Selection
+
+#### Enhanced TRV Priority Mode (Advanced Efficiency Logic)
+**Basic Triggers**: Outdoor-Indoor difference ≥ TRV Priority Threshold
+
+**Advanced Triggers** (when TRV monitoring enabled):
+- TRV is actively heating AND working efficiently
+- TRV valve position indicates good performance
+- No TRV-detected window opening
+- TRV temperature sensor shows proper heating
+
+**Override Conditions**:
+- TRV efficiency below threshold → Switch to AC priority
+- TRV window detection active → Use AC for faster response
+- TRV idle when significant heating needed → Activate AC immediately
 
 #### TRV Priority Mode (Efficient for Cold Weather)
 **Triggers when**: Outdoor-Indoor difference ≥ TRV Priority Threshold
@@ -69,6 +109,20 @@ The system evaluates two key factors:
 **Example**: Outdoor 16°C, Indoor 19.5°C, Target 21°C
 - Outdoor-Indoor difference: 3.5°C (< 5°C threshold) → AC Priority
 - **Result**: AC → 21°C, TRV → 21.5°C
+
+#### Advanced TRV Monitoring Examples
+
+**Efficient TRV Scenario**: 
+- TRV valve 60% open, heating actively, indoor rising 0.3°C
+- **Result**: Maintain TRV priority even in mild weather
+
+**Inefficient TRV Scenario**:
+- TRV valve 85% open, heating mode, but indoor temperature stable
+- **Result**: Switch to AC priority despite cold weather
+
+**TRV Window Detection**:
+- TRV detects window open, blueprint may not detect rapid temperature drop yet
+- **Result**: Immediate HVAC pause, both systems turn off
 
 ## Energy Efficiency Principles
 
@@ -105,7 +159,16 @@ secondary_heating_threshold: 2.0  # °C below target to activate secondary
 trv_priority_temp_difference: 5.0  # °C outdoor-indoor diff for TRV priority
 ```
 
-### Step 4: Monitor Logs
+### Step 4: Configure Advanced TRV Monitoring (Optional)
+```yaml
+enable_trv_efficiency_monitoring: true
+trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
+trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
+trv_window_open_sensor: switch.radiator_sala_open_window
+trv_running_steps_sensor: sensor.radiator_sala_closing_steps
+```
+
+### Step 5: Monitor Logs
 Check Home Assistant logbook for "ASHRAE 55 Dual Climate" entries showing decision logic.
 
 ## Troubleshooting
@@ -126,6 +189,14 @@ Check Home Assistant logbook for "ASHRAE 55 Dual Climate" entries showing decisi
 - Review outdoor vs. indoor temperature difference
 - Check if temperature difference below target meets secondary threshold
 - Verify TRV priority threshold setting matches your preferences
+- **If TRV monitoring enabled**: Check TRV efficiency status and valve position
+- **If TRV monitoring enabled**: Verify TRV sensor entities are available and responding
+
+#### TRV Efficiency Issues (Advanced Monitoring)
+- **TRV marked as inefficient**: Check valve position vs. heating output
+- **Valve stuck at high position**: May indicate mechanical problem with TRV
+- **TRV temperature not rising**: Check radiator circulation or valve calibration
+- **Frequent AC switching**: Consider adjusting efficiency thresholds or valve sensor accuracy
 
 ## Best Practices
 
@@ -159,10 +230,27 @@ Check Home Assistant logbook for "ASHRAE 55 Dual Climate" entries showing decisi
 
 ### Logbook Messages
 Monitor for detailed decision-making logs:
+
+**Basic Dual Climate Logging**:
 ```
 Dual heating decision: Indoor 18°C, Target 21°C, Outdoor 5°C.
 Temp diff below target: 3°C, Outdoor-Indoor diff: 13°C.
 TRV priority: true, Need secondary: true
+```
+
+**Advanced TRV Monitoring Logging**:
+```
+Dual heating decision (TRV Enhanced): Indoor 18°C, Target 21°C, Outdoor 5°C.
+TRV: Local 18.2°C, Valve 75%, Action heating, Efficient true, Window false.
+Temp diff below target: 3°C, Outdoor-Indoor diff: 13°C.
+TRV priority (enhanced): true, Need secondary: true
+```
+
+**TRV Window Detection Logging**:
+```
+Window/door open detected by TRV sensor! HVAC paused for 15 minutes.
+TRV window detection: true, Blueprint detection: false.
+Indoor: 18°C, Outdoor: 5°C, TRV: 18.2°C.
 ```
 
 ## Advanced Scenarios

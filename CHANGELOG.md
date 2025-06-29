@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Energy-optimized target temperature coordination between devices
   - Real-time dual system decision logging with temperature analysis
   - Estimated 25-35% heating energy savings in optimal conditions
+- **Advanced TRV Monitoring**: Real-time TRV sensor integration and efficiency analysis
+  - Valve position monitoring (opening/closing degree sensors)
+  - TRV efficiency calculation based on valve position and heating output
+  - Motor activity monitoring for performance analysis and problem detection
+  - TRV window open detection integration with blueprint logic
+  - Enhanced decision making based on actual TRV performance data
+  - Automatic inefficiency detection and AC switching
+  - Comprehensive TRV performance logging and diagnostics
+  - Support for Sonoff TRVZB and compatible smart TRV systems
 - **Window/Door Open Detection**: Automatic HVAC pause during ventilation events
   - Rapid temperature drop detection (configurable threshold: 1-5°C)
   - Configurable detection time window (2-15 minutes)

@@ -281,6 +281,52 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
 
+    # Advanced TRV Monitoring (Optional)
+    trv_valve_opening_sensor:
+      name: TRV Valve Opening Degree Sensor (Optional)
+      description: TRV valve opening percentage for efficiency monitoring (e.g., number.radiator_sala_valve_opening_degree)
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - number
+
+    trv_valve_closing_sensor:
+      name: TRV Valve Closing Degree Sensor (Optional)
+      description: TRV valve closing percentage for efficiency monitoring (e.g., number.radiator_sala_valve_closing_degree)
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - number
+
+    trv_window_open_sensor:
+      name: TRV Window Open Detection (Optional)
+      description: TRV built-in window open detection for enhanced efficiency (e.g., switch.radiator_sala_open_window)
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - binary_sensor
+            - switch
+
+    trv_running_steps_sensor:
+      name: TRV Running Steps Sensor (Optional)
+      description: TRV motor activity indicator for performance monitoring (e.g., sensor.radiator_sala_closing_steps)
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+
+    enable_trv_efficiency_monitoring:
+      name: Enable TRV Efficiency Monitoring
+      description: Use TRV sensor data for advanced efficiency calculations and decision making
+      default: false
+      selector:
+        boolean:
+
 variables:
   climate_entity_id: !input climate_entity
   indoor_sensor_id: !input indoor_temp_sensor
@@ -309,6 +355,11 @@ variables:
   primary_climate_entity_id: !input primary_climate_entity
   secondary_heating_threshold_val: !input secondary_heating_threshold
   trv_priority_temp_difference_val: !input trv_priority_temp_difference
+  trv_valve_opening_sensor_id: !input trv_valve_opening_sensor
+  trv_valve_closing_sensor_id: !input trv_valve_closing_sensor
+  trv_window_open_sensor_id: !input trv_window_open_sensor
+  trv_running_steps_sensor_id: !input trv_running_steps_sensor
+  enable_trv_efficiency_monitoring_val: !input enable_trv_efficiency_monitoring
   
   comfort_tolerance: >
     {% if comfort_category_val == "I" %}
@@ -523,6 +574,90 @@ variables:
     {% else %}
       false
     {% endif %}
+
+  # Advanced TRV Monitoring Variables
+  trv_valve_opening: >
+    {% if enable_trv_efficiency_monitoring_val and trv_valve_opening_sensor_id and trv_valve_opening_sensor_id != "" %}
+      {{ states(trv_valve_opening_sensor_id) | float(0) }}
+    {% else %}
+      0
+    {% endif %}
+
+  trv_valve_closing: >
+    {% if enable_trv_efficiency_monitoring_val and trv_valve_closing_sensor_id and trv_valve_closing_sensor_id != "" %}
+      {{ states(trv_valve_closing_sensor_id) | float(100) }}
+    {% else %}
+      100
+    {% endif %}
+
+  trv_window_open_detected: >
+    {% if enable_trv_efficiency_monitoring_val and trv_window_open_sensor_id and trv_window_open_sensor_id != "" %}
+      {{ is_state(trv_window_open_sensor_id, 'on') or is_state(trv_window_open_sensor_id, 'true') }}
+    {% else %}
+      false
+    {% endif %}
+
+  trv_running_steps: >
+    {% if enable_trv_efficiency_monitoring_val and trv_running_steps_sensor_id and trv_running_steps_sensor_id != "" %}
+      {{ states(trv_running_steps_sensor_id) | float(0) }}
+    {% else %}
+      0
+    {% endif %}
+
+  # TRV current temperature (from climate entity current_temperature attribute)
+  trv_current_temp: >
+    {% if enable_trv_efficiency_monitoring_val and primary_climate_entity_id and primary_climate_entity_id != "" %}
+      {{ state_attr(primary_climate_entity_id, 'current_temperature') | float(indoor_temp) }}
+    {% else %}
+      {{ indoor_temp }}
+    {% endif %}
+
+  # TRV HVAC action (heating, idle, etc.)
+  trv_hvac_action: >
+    {% if enable_trv_efficiency_monitoring_val and primary_climate_entity_id and primary_climate_entity_id != "" %}
+      {{ state_attr(primary_climate_entity_id, 'hvac_action') | string | lower }}
+    {% else %}
+      "unknown"
+    {% endif %}
+
+  # TRV Efficiency Calculation
+  trv_efficiency: >
+    {% if enable_trv_efficiency_monitoring_val and trv_valve_opening > 0 %}
+      {% set temp_diff = trv_current_temp - indoor_temp %}
+      {% set valve_position = trv_valve_opening | float %}
+      {% if valve_position > 70 and temp_diff < 1 %}
+        false  # TRV working hard but not heating effectively
+      {% elif valve_position > 50 and temp_diff < 0.5 %}
+        false  # TRV moderately open but minimal heating
+      {% elif trv_hvac_action == "heating" and temp_diff < 0.2 %}
+        false  # TRV says it's heating but no temperature difference
+      {% else %}
+        true   # TRV appears to be working efficiently
+      {% endif %}
+    {% else %}
+      true  # Default to efficient if no monitoring
+    {% endif %}
+
+  # Enhanced TRV Priority Decision
+  use_trv_priority_enhanced: >
+    {% if enable_trv_efficiency_monitoring_val and dual_climate_control_val %}
+      {% set outdoor_indoor_diff = indoor_temp - outdoor_temp %}
+      {% set basic_trv_priority = outdoor_indoor_diff >= trv_priority_temp_difference_val %}
+      {% if trv_hvac_action == "heating" and trv_efficiency %}
+        true   # TRV is heating efficiently, keep as primary
+      {% elif trv_hvac_action == "idle" and (target_temp - indoor_temp) > 1 %}
+        false  # TRV is idle but we need significant heating, use AC
+      {% elif not trv_efficiency %}
+        false  # TRV is not working efficiently, prefer AC
+      {% elif trv_window_open_detected %}
+        false  # TRV detected window open, prefer AC for faster response
+      {% else %}
+        {{ basic_trv_priority }}  # Fall back to basic logic
+      {% endif %}
+    {% else %}
+      {% set outdoor_indoor_diff = indoor_temp - outdoor_temp %}
+      {{ outdoor_indoor_diff >= trv_priority_temp_difference_val }}
+    {% endif %}
   
   # Seasonal optimization logic
   is_winter_season: >
@@ -550,13 +685,15 @@ variables:
   temp_change_rate: >
     {{ (previous_indoor_temp - indoor_temp) | abs }}
   
-  # Detect rapid temperature drop (window/door opening)
+  # Detect rapid temperature drop (window/door opening) - Enhanced with TRV detection
   window_door_open_detected: >
     {% if window_open_detection_val %}
       {% set temp_drop = previous_indoor_temp - indoor_temp %}
       {% set time_since_last_run = (now().timestamp() - state_attr(this.entity_id, 'last_changed').timestamp()) / 60 %}
-      {% if temp_drop >= window_open_temp_drop_val and time_since_last_run <= window_open_detection_time_val %}
-        {# Rapid temperature drop detected - likely window/door opened #}
+      {% set blueprint_detection = temp_drop >= window_open_temp_drop_val and time_since_last_run <= window_open_detection_time_val %}
+      {% set trv_detection = trv_window_open_detected %}
+      {% if blueprint_detection or trv_detection %}
+        {# Rapid temperature drop detected by blueprint OR TRV detected window open #}
         true
       {% elif state_attr(this.entity_id, 'window_open_pause_until') %}
         {# Check if still in pause period #}
@@ -566,7 +703,8 @@ variables:
         false
       {% endif %}
     {% else %}
-      false
+      {# If blueprint detection disabled, still check TRV detection #}
+      {{ trv_window_open_detected if enable_trv_efficiency_monitoring_val else false }}
     {% endif %}
   
   # Calculate when to resume HVAC after window/door detection
@@ -634,17 +772,31 @@ action:
           - condition: template
             value_template: "{{ window_door_open_detected }}"
         sequence:
+          # Turn off main climate entity
           - service: climate.turn_off
             target:
               entity_id: !input climate_entity
+          # Turn off TRV if dual climate control is enabled
+          - condition: template
+            value_template: "{{ dual_climate_control_val and primary_climate_entity_id != '' }}"
+          - service: climate.turn_off
+            target:
+              entity_id: "{{ primary_climate_entity_id }}"
           - service: logbook.log
             data:
               name: "ASHRAE 55 Adaptive Climate"
               message: >
+                {% if trv_window_open_detected and enable_trv_efficiency_monitoring_val %}
+                Window/door open detected by TRV sensor! HVAC paused for {{ window_open_pause_duration_val }} minutes.
+                TRV window detection: {{ trv_window_open_detected }}, Blueprint detection: {{ (previous_indoor_temp - indoor_temp) >= window_open_temp_drop_val }}.
+                Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C, TRV: {{ trv_current_temp }}°C.
+                Resume time: {{ window_open_pause_until }}
+                {% else %}
                 Window/door open detected! HVAC paused for {{ window_open_pause_duration_val }} minutes.
                 Temperature drop: {{ (previous_indoor_temp - indoor_temp) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
+                {% endif %}
           # Store current state for next run
           - service: automation.turn_on
             data:
@@ -707,17 +859,24 @@ action:
                           - variables:
                               temp_diff_below_target: "{{ target_temp - indoor_temp }}"
                               outdoor_indoor_diff: "{{ indoor_temp - outdoor_temp }}"
-                              use_trv_priority: "{{ outdoor_indoor_diff >= trv_priority_temp_difference_val }}"
+                              use_trv_priority: "{{ use_trv_priority_enhanced }}"
                               need_secondary_heating: "{{ temp_diff_below_target >= secondary_heating_threshold_val }}"
                           
-                          # Log dual climate decision
+                          # Enhanced TRV logging with efficiency data
                           - service: logbook.log
                             data:
                               name: "ASHRAE 55 Dual Climate"
                               message: >
+                                {% if enable_trv_efficiency_monitoring_val %}
+                                Dual heating decision (TRV Enhanced): Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
+                                TRV: Local {{ trv_current_temp }}°C, Valve {{ trv_valve_opening }}%, Action {{ trv_hvac_action }}, Efficient {{ trv_efficiency }}, Window {{ trv_window_open_detected }}.
+                                Temp diff below target: {{ temp_diff_below_target }}°C, Outdoor-Indoor diff: {{ outdoor_indoor_diff }}°C.
+                                TRV priority (enhanced): {{ use_trv_priority }}, Need secondary: {{ need_secondary_heating }}
+                                {% else %}
                                 Dual heating decision: Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
                                 Temp diff below target: {{ temp_diff_below_target }}°C, Outdoor-Indoor diff: {{ outdoor_indoor_diff }}°C.
                                 TRV priority: {{ use_trv_priority }}, Need secondary: {{ need_secondary_heating }}
+                                {% endif %}
                           
                           - choose:
                               # Use TRV as primary when outdoor is much colder (better efficiency)
