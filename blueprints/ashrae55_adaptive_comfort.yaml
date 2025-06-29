@@ -302,15 +302,7 @@ blueprint:
             - sensor
             - number
 
-    trv_window_open_sensor:
-      name: TRV Window Open Detection (Optional)
-      description: TRV built-in window open detection for enhanced efficiency (e.g., switch.radiator_sala_open_window)
-      default: ""
-      selector:
-        entity:
-          domain: 
-            - binary_sensor
-            - switch
+
 
     trv_running_steps_sensor:
       name: TRV Running Steps Sensor (Optional)
@@ -357,7 +349,6 @@ variables:
   trv_priority_temp_difference_val: !input trv_priority_temp_difference
   trv_valve_opening_sensor_id: !input trv_valve_opening_sensor
   trv_valve_closing_sensor_id: !input trv_valve_closing_sensor
-  trv_window_open_sensor_id: !input trv_window_open_sensor
   trv_running_steps_sensor_id: !input trv_running_steps_sensor
   enable_trv_efficiency_monitoring_val: !input enable_trv_efficiency_monitoring
   
@@ -590,13 +581,6 @@ variables:
       100
     {% endif %}
 
-  trv_window_open_detected: >
-    {% if enable_trv_efficiency_monitoring_val and trv_window_open_sensor_id and trv_window_open_sensor_id != "" %}
-      {{ is_state(trv_window_open_sensor_id, 'on') or is_state(trv_window_open_sensor_id, 'true') }}
-    {% else %}
-      false
-    {% endif %}
-
   trv_running_steps: >
     {% if enable_trv_efficiency_monitoring_val and trv_running_steps_sensor_id and trv_running_steps_sensor_id != "" %}
       {{ states(trv_running_steps_sensor_id) | float(0) }}
@@ -649,8 +633,6 @@ variables:
         false  # TRV is idle but we need significant heating, use AC
       {% elif not trv_efficiency %}
         false  # TRV is not working efficiently, prefer AC
-      {% elif trv_window_open_detected %}
-        false  # TRV detected window open, prefer AC for faster response
       {% else %}
         {{ basic_trv_priority }}  # Fall back to basic logic
       {% endif %}
@@ -685,7 +667,7 @@ variables:
   temp_change_rate: >
     {{ (previous_indoor_temp - indoor_temp) | abs }}
   
-  # Detect rapid temperature drop (window/door opening) - Enhanced with TRV detection
+  # Detect rapid temperature drop (window/door opening)
   window_door_open_detected: >
     {% if window_open_detection_val %}
       {% set temp_drop = previous_indoor_temp - indoor_temp %}
@@ -697,9 +679,8 @@ variables:
         {% set time_since_last_run = 5 %}
       {% endif %}
       {% set blueprint_detection = temp_drop >= window_open_temp_drop_val and time_since_last_run <= window_open_detection_time_val %}
-      {% set trv_detection = trv_window_open_detected %}
-      {% if blueprint_detection or trv_detection %}
-        {# Rapid temperature drop detected by blueprint OR TRV detected window open #}
+      {% if blueprint_detection %}
+        {# Rapid temperature drop detected by blueprint #}
         true
       {% elif state_attr(this.entity_id, 'window_open_pause_until') %}
         {# Check if still in pause period #}
@@ -714,8 +695,7 @@ variables:
         false
       {% endif %}
     {% else %}
-      {# If blueprint detection disabled, still check TRV detection #}
-      {{ trv_window_open_detected if enable_trv_efficiency_monitoring_val else false }}
+      false
     {% endif %}
   
   # Calculate when to resume HVAC after window/door detection
@@ -797,17 +777,10 @@ action:
             data:
               name: "Adaptive Climate Control"
               message: >
-                {% if trv_window_open_detected and enable_trv_efficiency_monitoring_val %}
-                Window/door open detected by TRV sensor! HVAC paused for {{ window_open_pause_duration_val }} minutes.
-                TRV window detection: {{ trv_window_open_detected }}, Blueprint detection: {{ (previous_indoor_temp - indoor_temp) >= window_open_temp_drop_val }}.
-                Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C, TRV: {{ trv_current_temp }}°C.
-                Resume time: {{ window_open_pause_until }}
-                {% else %}
                 Window/door open detected! HVAC paused for {{ window_open_pause_duration_val }} minutes.
                 Temperature drop: {{ (previous_indoor_temp - indoor_temp) | round(1) }}°C in {{ window_open_detection_time_val }} minutes.
                 Indoor: {{ indoor_temp }}°C (was {{ previous_indoor_temp }}°C), Outdoor: {{ outdoor_temp }}°C.
                 Resume time: {{ window_open_pause_until }}
-                {% endif %}
           # Store current state for next run
           - service: automation.turn_on
             data:
@@ -880,7 +853,7 @@ action:
                               message: >
                                 {% if enable_trv_efficiency_monitoring_val %}
                                 Dual heating decision (TRV Enhanced): Indoor {{ indoor_temp }}°C, Target {{ target_temp }}°C, Outdoor {{ outdoor_temp }}°C.
-                                TRV: Local {{ trv_current_temp }}°C, Valve {{ trv_valve_opening }}%, Action {{ trv_hvac_action }}, Efficient {{ trv_efficiency }}, Window {{ trv_window_open_detected }}.
+                                TRV: Local {{ trv_current_temp }}°C, Valve {{ trv_valve_opening }}%, Action {{ trv_hvac_action }}, Efficient {{ trv_efficiency }}.
                                 Temp diff below target: {{ temp_diff_below_target }}°C, Outdoor-Indoor diff: {{ outdoor_indoor_diff }}°C.
                                 TRV priority (enhanced): {{ use_trv_priority }}, Need secondary: {{ need_secondary_heating }}
                                 {% else %}
