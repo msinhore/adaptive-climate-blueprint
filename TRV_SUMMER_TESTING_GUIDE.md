@@ -14,10 +14,11 @@ climate.radiator_sala
 number.radiator_sala_valve_opening_degree
 number.radiator_sala_valve_closing_degree
 switch.radiator_sala_open_window
-sensor.radiator_sala_open_window
 sensor.radiator_sala_closing_steps
 sensor.radiator_sala_battery
 ```
+
+**Nota**: Verifique se existe `sensor.radiator_sala_open_window` no seu setup. Se não existir, é normal - use apenas o switch de controle.
 
 #### Blueprint Configuration Test
 Create automation with these settings (won't activate heating in summer):
@@ -29,7 +30,7 @@ primary_climate_entity: climate.radiator_sala
 secondary_heating_threshold: 2.0
 trv_priority_temp_difference: 5.0
 enable_trv_efficiency_monitoring: true
-trv_window_open_sensor: sensor.radiator_sala_open_window  # Use o SENSOR, não o SWITCH
+trv_window_open_sensor: ""  # Verificar se existe sensor específico no seu setup
 # Add all TRV sensors...
 ```
 
@@ -113,7 +114,6 @@ sensor:
         value_template: >
           Valve: {{ states('number.radiator_sala_valve_opening_degree') }}%, 
           Window Detection Enabled: {{ states('switch.radiator_sala_open_window') }}, 
-          Window Detected: {{ states('sensor.radiator_sala_open_window') }},
           HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }},
           Battery: {{ states('sensor.radiator_sala_battery') }}%,
           Steps: {{ states('sensor.radiator_sala_closing_steps') }}
@@ -156,8 +156,6 @@ entities:
     name: "Valve Position"
   - entity: switch.radiator_sala_open_window
     name: "Window Detection (Enable/Disable)"
-  - entity: sensor.radiator_sala_open_window
-    name: "Window Detected (State)"
   - type: attribute
     entity: climate.radiator_sala
     attribute: hvac_action
@@ -167,6 +165,8 @@ entities:
   - entity: sensor.radiator_sala_closing_steps
     name: "Motor Activity"
 ```
+
+**Nota**: Se existir `sensor.radiator_sala_open_window` no seu setup, adicione-o ao card acima.
 
 ### 7. Testing Automation Logic
 
@@ -185,7 +185,6 @@ automation:
           message: >
             TRV Test Data: Valve {{ states('number.radiator_sala_valve_opening_degree') }}%, 
             Window Detection: {{ states('switch.radiator_sala_open_window') }} (enabled/disabled), 
-            Window Detected: {{ states('sensor.radiator_sala_open_window') }},
             HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }},
             Battery: {{ states('sensor.radiator_sala_battery') }}%,
             Ready for winter testing: {{ 'Yes' if states('climate.radiator_sala') != 'unavailable' else 'No' }}

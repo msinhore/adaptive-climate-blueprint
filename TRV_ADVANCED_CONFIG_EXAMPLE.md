@@ -30,11 +30,16 @@ trv_valve_opening_sensor: number.radiator_sala_valve_opening_degree
 trv_valve_closing_sensor: number.radiator_sala_valve_closing_degree
 
 # TRV window open detection integration
-# IMPORTANTE: Para Sonoff TRVZB, há 2 entidades diferentes:
-# 1. switch.radiator_sala_open_window = HABILITA/DESABILITA a detecção (controle)
-# 2. sensor.radiator_sala_open_window = ESTADO REAL da detecção (true/false)
-# Use o SENSOR para monitorar se janela foi detectada como aberta:
-trv_window_open_sensor: sensor.radiator_sala_open_window  # Sensor de estado real
+# IMPORTANTE: Para Sonoff TRVZB, verifique qual entidade existe no seu setup:
+# Opção 1: Se existe binary_sensor separado (verifique Developer Tools > States)
+# trv_window_open_sensor: binary_sensor.radiator_sala_window_detection
+#
+# Opção 2: Se só existe o switch de controle (mais comum)
+# trv_window_open_sensor: ""  # Deixar vazio e monitorar via hvac_action
+#
+# Opção 3: Se TRV reporta via atributos do climate entity
+# Monitore state_attr('climate.radiator_sala', 'window_detection') nos templates
+trv_window_open_sensor: ""  # Verificar primeiro quais entidades existem
 
 # TRV motor activity monitoring
 trv_running_steps_sensor: sensor.radiator_sala_closing_steps
@@ -51,7 +56,7 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
 - `switch.radiator_sala_child_lock` - Safety lock control
 - `number.radiator_sala_frost_protection_temperature` - Frost protection setting
 - `switch.radiator_sala_open_window` - **Habilita/desabilita** detecção de janela (controle)
-- `sensor.radiator_sala_open_window` - **Estado real** da detecção de janela (true/false)
+- ⚠️ `sensor.radiator_sala_open_window` - **Verificar se existe** no seu setup
 - `number.radiator_sala_external_temperature_input` - External temperature input
 - `number.radiator_sala_temperature_accuracy` - Temperature accuracy adjustment
 
@@ -78,11 +83,11 @@ trv_running_steps_sensor: sensor.radiator_sala_closing_steps
    - `number.radiator_sala_valve_closing_degree` → `trv_valve_closing_sensor`
 
 2. **Window Detection Integration**:
-   - `switch.radiator_sala_open_window` → Habilita/desabilita a detecção (configuração)
-   - `sensor.radiator_sala_open_window` → `trv_window_open_sensor` (estado real)
-   - **Importante**: Use o SENSOR, não o SWITCH, no blueprint
-   - O switch apenas controla se a funcionalidade está ativa
-   - O sensor reporta quando o TRV realmente detectou janela aberta
+   - **Primeiro**: Verifique no Developer Tools > States quais entidades existem
+   - `switch.radiator_sala_open_window` → Controle (habilita/desabilita)
+   - Procure por: `binary_sensor.radiator_sala_window_detection` ou similar
+   - Se não existir sensor separado, deixe `trv_window_open_sensor: ""`
+   - O blueprint pode monitorar via mudanças no hvac_action
 
 3. **Motor Activity Monitoring**:
    - `sensor.radiator_sala_closing_steps` → `trv_running_steps_sensor`

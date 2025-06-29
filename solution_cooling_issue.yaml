@@ -41,7 +41,8 @@ AC Temperatura Alvo: {{ state_attr('climate.seu_ac', 'temperature') }}°C
 TRV Estado: {{ states('climate.radiator_sala') }}
 TRV HVAC Action: {{ state_attr('climate.radiator_sala', 'hvac_action') }}
 TRV Switch Window Detection: {{ states('switch.radiator_sala_open_window') }} (enabled/disabled)
-TRV Window Detected: {{ states('sensor.radiator_sala_open_window') }} (true/false state)
+# Verificar se existe este sensor no seu setup:
+# TRV Window Detected: {{ states('sensor.radiator_sala_open_window') if states('sensor.radiator_sala_open_window') != 'unavailable' else 'N/A' }}
 
 # === AUTOMAÇÃO ===
 Automação Estado: {{ states('automation.seu_adaptive_climate') }}
@@ -70,14 +71,21 @@ natural_ventilation_enable: false
 natural_ventilation_threshold: 1.0  # Ao invés do padrão 2.0
 ```
 
-### Solução 3: Configuração TRV Correta (Baseado no fórum)
+### Solução 3: Configuração TRV Correta 
 ```yaml
-# Para Sonoff TRVZB, use o SENSOR de estado real, não o SWITCH
-trv_window_open_sensor: sensor.radiator_sala_open_window  # Estado real (true/false)
+# Para Sonoff TRVZB, primeiro verifique no Developer Tools > States
+# quais entidades existem. Procure por:
+# binary_sensor.radiator_sala_window_detection
+# sensor.radiator_sala_open_window
+# ou similar
 
-# O switch apenas controla se a funcionalidade está ativa:
-# switch.radiator_sala_open_window = enable/disable detection
-# sensor.radiator_sala_open_window = actual detection state
+# Se existir sensor específico:
+trv_window_open_sensor: binary_sensor.radiator_sala_window_detection
+
+# Se não existir sensor específico (mais comum):
+trv_window_open_sensor: ""  # Deixar vazio
+
+# O blueprint detectará janela aberta via mudanças no hvac_action
 ```
 
 ### Solução 4: Verificar Logs da Automação
