@@ -439,7 +439,7 @@ variables:
     {% endif %}
   
   temperature_needs_change: >
-    {{ (current_temperature - target_temp) | abs >= (!input temperature_change_threshold | float(1.0)) }}
+    {{ (current_temperature - target_temp) | abs >= temperature_change_threshold_val }}
   
   fan_mode_needs_change: >
     {% if adaptive_air_velocity_val %}
