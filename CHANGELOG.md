@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - v2.0 Enhanced Features
+### Added - v2.1 Enhanced Features
 - **Smart Integer Rounding System**: Intelligent energy-optimized temperature rounding
   - DOWN rounding when outdoor > indoor temperature (reduces cooling energy)
   - UP rounding when outdoor < indoor temperature (reduces heating energy)
