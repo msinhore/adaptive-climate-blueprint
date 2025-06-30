@@ -29,6 +29,13 @@ blueprint:
             - label: "Category III (±4°C - 65% satisfaction)"
               value: "III"
     
+    use_operative_temperature:
+      name: Use Operative Temperature
+      description: Enable operative temperature calculation (requires radiant temperature sensor)
+      default: false
+      selector:
+        boolean:
+
     energy_save_mode:
       name: Energy Save Mode
       description: Enable enhanced energy saving features
@@ -102,7 +109,39 @@ blueprint:
             - motion
             - occupancy
             - presence
+
+    # Advanced Comfort Parameters (Optional)
+    mean_radiant_temp_sensor:
+      name: Mean Radiant Temperature Sensor (Optional)
+      description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
     
+    indoor_humidity_sensor:
+      name: Indoor Humidity Sensor (Optional)
+      description: Humidity sensor or input number for enhanced comfort calculation
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
+    
+    outdoor_humidity_sensor:
+      name: Outdoor Humidity Sensor (Optional)
+      description: Humidity sensor, input number, or weather service for natural ventilation decisions
+      default: ""
+      selector:
+        entity:
+          domain: 
+            - sensor
+            - input_number
+            - weather
+
     natural_ventilation_threshold:
       name: Natural Ventilation Threshold
       description: Temperature difference threshold for natural ventilation (°C)
@@ -179,45 +218,6 @@ blueprint:
           max: 240
           step: 5
           unit_of_measurement: "min"
-
-    # Advanced Comfort Parameters (Optional)
-    mean_radiant_temp_sensor:
-      name: Mean Radiant Temperature Sensor (Optional)
-      description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
-      default: ""
-      selector:
-        entity:
-          domain: 
-            - sensor
-            - input_number
-    
-    indoor_humidity_sensor:
-      name: Indoor Humidity Sensor (Optional)
-      description: Humidity sensor or input number for enhanced comfort calculation
-      default: ""
-      selector:
-        entity:
-          domain: 
-            - sensor
-            - input_number
-    
-    outdoor_humidity_sensor:
-      name: Outdoor Humidity Sensor (Optional)
-      description: Humidity sensor, input number, or weather service for natural ventilation decisions
-      default: ""
-      selector:
-        entity:
-          domain: 
-            - sensor
-            - input_number
-            - weather
-    
-    use_operative_temperature:
-      name: Use Operative Temperature
-      description: Enable operative temperature calculation (requires radiant temperature sensor)
-      default: false
-      selector:
-        boolean:
 
 variables:
   climate_entity_id: !input climate_entity
