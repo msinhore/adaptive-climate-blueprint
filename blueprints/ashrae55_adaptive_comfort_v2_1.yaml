@@ -11,59 +11,6 @@ blueprint:
   source_url: https://github.com/msinhore/adaptive-climate-blueprint
   
   input:
-    comfort_category:
-      name: ASHRAE 55 Comfort Category
-      description: >
-        Comfort category based on ASHRAE 55 standard:
-        - Category I: ±2°C (90% satisfaction) - Office environments
-        - Category II: ±3°C (80% satisfaction) - Typical residential 
-        - Category III: ±4°C (65% satisfaction) - Maximum energy savings
-      default: "II"
-      selector:
-        select:
-          options:
-            - label: "Category I (±2°C - 90% satisfaction)"
-              value: "I"
-            - label: "Category II (±3°C - 80% satisfaction)"
-              value: "II"
-            - label: "Category III (±4°C - 65% satisfaction)"
-              value: "III"
-    
-    energy_save_mode:
-      name: Energy Save Mode
-      description: Enable enhanced energy saving features
-      default: true
-      selector:
-        boolean:
-    
-    natural_ventilation_enable:
-      name: Natural Ventilation Detection
-      description: Automatically turn off HVAC when natural ventilation is sufficient
-      default: true
-      selector:
-        boolean:
-    
-    adaptive_air_velocity:
-      name: Adaptive Air Velocity Control
-      description: Automatically adjust fan speed based on temperature deviation
-      default: true
-      selector:
-        boolean:
-    
-    humidity_comfort_enable:
-      name: Humidity Comfort Correction
-      description: Apply humidity-based comfort corrections
-      default: true
-      selector:
-        boolean:
-    
-    comfort_precision_mode:
-      name: Precision Comfort Mode
-      description: Use high-precision calculations matching CBE tool accuracy
-      default: false
-      selector:
-        boolean:
-
     climate_entity:
       name: Climate Entity
       description: The climate device to control (SmartIR, generic thermostat, etc.)
@@ -102,6 +49,38 @@ blueprint:
             - motion
             - occupancy
             - presence
+    
+    comfort_category:
+      name: ASHRAE 55 Comfort Category
+      description: >
+        Comfort category based on ASHRAE 55 standard:
+        - Category I: ±2°C (90% satisfaction) - Office environments
+        - Category II: ±3°C (80% satisfaction) - Typical residential 
+        - Category III: ±4°C (65% satisfaction) - Maximum energy savings
+      default: "II"
+      selector:
+        select:
+          options:
+            - label: "Category I (±2°C - 90% satisfaction)"
+              value: "I"
+            - label: "Category II (±3°C - 80% satisfaction)"
+              value: "II"
+            - label: "Category III (±4°C - 65% satisfaction)"
+              value: "III"
+    
+    energy_save_mode:
+      name: Energy Save Mode
+      description: Enable enhanced energy saving features
+      default: true
+      selector:
+        boolean:
+    
+    natural_ventilation_enable:
+      name: Natural Ventilation Detection
+      description: Automatically turn off HVAC when natural ventilation is sufficient
+      default: true
+      selector:
+        boolean:
     
     natural_ventilation_threshold:
       name: Natural Ventilation Threshold
@@ -147,40 +126,7 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
     
-    air_velocity:
-      name: Air Velocity (m/s)
-      description: Typical air velocity in the space (affects cooling sensation)
-      default: 0.1
-      selector:
-        number:
-          min: 0.0
-          max: 2.0
-          step: 0.1
-          unit_of_measurement: "m/s"
-    
-    temperature_change_threshold:
-      name: Temperature Change Threshold
-      description: Minimum temperature difference (°C) to trigger set_temperature command
-      default: 1.0
-      selector:
-        number:
-          min: 0.5
-          max: 2.0
-          step: 0.5
-          unit_of_measurement: "°C"
-
-    prolonged_absence_minutes:
-      name: Prolonged Absence Time
-      description: Minutes without presence to switch to maximum energy saving (Category III)
-      default: 60
-      selector:
-        number:
-          min: 10
-          max: 240
-          step: 5
-          unit_of_measurement: "min"
-
-    # Advanced Comfort Parameters (Optional)
+    # --- Advanced Comfort Parameters (Optional) ---
     mean_radiant_temp_sensor:
       name: Mean Radiant Temperature Sensor (Optional)
       description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
@@ -215,6 +161,38 @@ blueprint:
     use_operative_temperature:
       name: Use Operative Temperature
       description: Enable operative temperature calculation (requires radiant temperature sensor)
+      default: false
+      selector:
+        boolean:
+    
+    air_velocity:
+      name: Air Velocity (m/s)
+      description: Typical air velocity in the space (affects cooling sensation)
+      default: 0.1
+      selector:
+        number:
+          min: 0.0
+          max: 2.0
+          step: 0.1
+          unit_of_measurement: "m/s"
+    
+    adaptive_air_velocity:
+      name: Adaptive Air Velocity Control
+      description: Automatically adjust fan speed based on temperature deviation
+      default: true
+      selector:
+        boolean:
+    
+    humidity_comfort_enable:
+      name: Humidity Comfort Correction
+      description: Apply humidity-based comfort corrections
+      default: true
+      selector:
+        boolean:
+    
+    comfort_precision_mode:
+      name: Precision Comfort Mode
+      description: Use high-precision calculations matching CBE tool accuracy
       default: false
       selector:
         boolean:
@@ -452,20 +430,11 @@ variables:
     {% endif %}
   
   temperature_needs_change: >
-    {{ (current_temperature - target_temp) | abs >= (!input temperature_change_threshold | float(1.0)) }}
+    {{ (current_temperature - target_temp) | abs > 1.0 }}
   
   fan_mode_needs_change: >
     {% if adaptive_air_velocity_val %}
       {{ current_fan_mode != optimal_fan_speed }}
-    {% else %}
-      false
-    {% endif %}
-  
-  prolonged_absence: >
-    {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
-      {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}
-      {% set now = as_timestamp(now()) %}
-      {{ not is_state(occupancy_sensor_id, 'on') and (now - last_seen) > (!input prolonged_absence_minutes | int(60)) * 60 }}
     {% else %}
       false
     {% endif %}
