@@ -452,7 +452,7 @@ variables:
     {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
       {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}
       {% set now = as_timestamp(now()) %}
-      {{ not is_state(occupancy_sensor_id, 'on') and (now - last_seen) > (!input prolonged_absence_minutes | int(60)) * 60 }}
+      {{ not is_state(occupancy_sensor_id, 'on') and (now - last_seen) > (prolonged_absence_minutes_val * 60) }}
     {% else %}
       false
     {% endif %}
