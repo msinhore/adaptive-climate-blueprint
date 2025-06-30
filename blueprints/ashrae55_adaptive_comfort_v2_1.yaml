@@ -28,42 +28,38 @@ blueprint:
               value: "II"
             - label: "Category III (±4°C - 65% satisfaction)"
               value: "III"
-    
+
+    # Boolean selectors
     use_operative_temperature:
       name: Use Operative Temperature
       description: Enable operative temperature calculation (requires radiant temperature sensor)
       default: false
       selector:
         boolean:
-
     energy_save_mode:
       name: Energy Save Mode
       description: Enable enhanced energy saving features
       default: true
       selector:
         boolean:
-    
     natural_ventilation_enable:
       name: Natural Ventilation Detection
       description: Automatically turn off HVAC when natural ventilation is sufficient
       default: true
       selector:
         boolean:
-    
     adaptive_air_velocity:
       name: Adaptive Air Velocity Control
       description: Automatically adjust fan speed based on temperature deviation
       default: true
       selector:
         boolean:
-    
     humidity_comfort_enable:
       name: Humidity Comfort Correction
       description: Apply humidity-based comfort corrections
       default: true
       selector:
         boolean:
-    
     comfort_precision_mode:
       name: Precision Comfort Mode
       description: Use high-precision calculations matching CBE tool accuracy
@@ -71,13 +67,13 @@ blueprint:
       selector:
         boolean:
 
+    # Entity selectors
     climate_entity:
       name: Climate Entity
       description: The climate device to control (SmartIR, generic thermostat, etc.)
       selector:
         entity:
           domain: climate
-    
     indoor_temp_sensor:
       name: Indoor Temperature Sensor
       description: Temperature sensor, input number, or weather service for the room being controlled
@@ -87,7 +83,6 @@ blueprint:
             - sensor
             - input_number
             - weather
-    
     outdoor_temp_sensor:
       name: Outdoor Temperature Sensor
       description: Temperature sensor, input number, or weather service for adaptive comfort calculations
@@ -97,7 +92,6 @@ blueprint:
             - sensor
             - input_number
             - weather
-    
     occupancy_sensor:
       name: Occupancy Sensor (Optional)
       description: Motion or presence sensor for occupancy-aware control
@@ -109,8 +103,6 @@ blueprint:
             - motion
             - occupancy
             - presence
-
-    # Advanced Comfort Parameters (Optional)
     mean_radiant_temp_sensor:
       name: Mean Radiant Temperature Sensor (Optional)
       description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
@@ -120,7 +112,6 @@ blueprint:
           domain: 
             - sensor
             - input_number
-    
     indoor_humidity_sensor:
       name: Indoor Humidity Sensor (Optional)
       description: Humidity sensor or input number for enhanced comfort calculation
@@ -130,7 +121,6 @@ blueprint:
           domain: 
             - sensor
             - input_number
-    
     outdoor_humidity_sensor:
       name: Outdoor Humidity Sensor (Optional)
       description: Humidity sensor, input number, or weather service for natural ventilation decisions
@@ -142,6 +132,7 @@ blueprint:
             - input_number
             - weather
 
+    # Number selectors with unit_of_measurement: "°C"
     natural_ventilation_threshold:
       name: Natural Ventilation Threshold
       description: Temperature difference threshold for natural ventilation (°C)
@@ -152,7 +143,6 @@ blueprint:
           max: 5.0
           step: 0.5
           unit_of_measurement: "°C"
-    
     setback_temperature_offset:
       name: Setback Temperature Offset
       description: Temperature offset when room is unoccupied (°C)
@@ -163,7 +153,6 @@ blueprint:
           max: 5.0
           step: 0.5
           unit_of_measurement: "°C"
-    
     min_comfort_temp:
       name: Minimum Comfort Temperature
       description: Absolute minimum comfort temperature (°C)
@@ -174,7 +163,6 @@ blueprint:
           max: 22.0
           step: 0.5
           unit_of_measurement: "°C"
-    
     max_comfort_temp:
       name: Maximum Comfort Temperature
       description: Absolute maximum comfort temperature (°C)
@@ -185,18 +173,6 @@ blueprint:
           max: 32.0
           step: 0.5
           unit_of_measurement: "°C"
-    
-    air_velocity:
-      name: Air Velocity (m/s)
-      description: Typical air velocity in the space (affects cooling sensation)
-      default: 0.1
-      selector:
-        number:
-          min: 0.0
-          max: 2.0
-          step: 0.1
-          unit_of_measurement: "m/s"
-    
     temperature_change_threshold:
       name: Temperature Change Threshold
       description: Minimum temperature difference (°C) to trigger set_temperature command
@@ -208,6 +184,17 @@ blueprint:
           step: 0.5
           unit_of_measurement: "°C"
 
+    # Number selectors with other units
+    air_velocity:
+      name: Air Velocity (m/s)
+      description: Typical air velocity in the space (affects cooling sensation)
+      default: 0.1
+      selector:
+        number:
+          min: 0.0
+          max: 2.0
+          step: 0.1
+          unit_of_measurement: "m/s"
     prolonged_absence_minutes:
       name: Prolonged Absence Time
       description: Minutes without presence to switch to maximum energy saving (Category III)
