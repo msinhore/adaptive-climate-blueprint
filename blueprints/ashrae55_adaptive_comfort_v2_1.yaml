@@ -517,7 +517,7 @@ action:
               entity_id: !input climate_entity
           - service: logbook.log
             data:
-              name: "ASHRAE 55 Adaptive Climate"
+              name: "ASHRAE 55 Adaptive Climate {{ this.name}}"
               message: >
                 Natural ventilation active. HVAC turned off.
                 Outdoor: {{ outdoor_temp }}°C, Indoor: {{ indoor_temp }}°C,
@@ -733,7 +733,7 @@ action:
           
           - service: logbook.log
             data:
-              name: "ASHRAE 55 Adaptive Climate"
+              name: "ASHRAE 55 Adaptive Climate {{ this.name }}"
               message: >
                 ASHRAE 55 compliant climate control applied. 
                 Target: {{ target_temp }}°C (Current: {{ current_temperature }}°C),
