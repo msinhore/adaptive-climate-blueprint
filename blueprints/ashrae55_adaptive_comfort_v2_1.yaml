@@ -207,6 +207,7 @@ blueprint:
           unit_of_measurement: "min"
 
 variables:
+  temperature_change_threshold_val: !input temperature_change_threshold
   climate_entity_id: !input climate_entity
   indoor_sensor_id: !input indoor_temp_sensor
   outdoor_sensor_id: !input outdoor_temp_sensor
@@ -226,7 +227,6 @@ variables:
   adaptive_air_velocity_val: !input adaptive_air_velocity
   humidity_comfort_enable_val: !input humidity_comfort_enable
   comfort_precision_mode_val: !input comfort_precision_mode
-  temperature_change_threshold_val: !input temperature_change_threshold
   
   comfort_tolerance: >
     {% if comfort_category_val == "I" %}
