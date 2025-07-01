@@ -498,7 +498,7 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {{ state_attr(climate_entity_id, 'hvac_mode') != 'off' }}
+      {{ states(climate_entity_id) != 'off' }}
   - condition: template
     value_template: >
       {{ states(climate_entity_id) not in ['unavailable', 'unknown'] and
