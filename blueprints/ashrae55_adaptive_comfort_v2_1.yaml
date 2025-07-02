@@ -105,10 +105,6 @@ blueprint:
       name: Prolonged Absence Time
       description: Minutes without presence to switch to maximum energy saving (Category III)
       default: 60
-      visibleWhen:
-        - condition: state
-          entity: use_occupancy_features
-          state: true
       selector:
         number:
           min: 10.0
@@ -120,25 +116,12 @@ blueprint:
       name: Auto Shutdown on Prolonged Absence
       description: Automatically turn off HVAC when no presence is detected for extended period
       default: false
-      visibleWhen:
-        - condition: state
-          entity: use_occupancy_features
-          state: true
       selector:
         boolean: {}
     auto_shutdown_minutes:
       name: Auto Shutdown Time
       description: Minutes without presence to automatically turn off HVAC (requires Auto Shutdown enabled)
       default: 120
-      visibleWhen:
-        - condition: and
-          conditions:
-            - condition: state
-              entity: use_occupancy_features
-              state: true
-            - condition: state
-              entity: auto_shutdown_enable
-              state: true
       selector:
         number:
           min: 15.0
@@ -151,10 +134,6 @@ blueprint:
       description: Temperature sensor or input number for mean radiant temperature
         measurement (near windows, heated surfaces)
       default: ''
-      visibleWhen:
-        - condition: state
-          entity: use_operative_temperature
-          state: true
       selector:
         entity:
           domain:
@@ -171,10 +150,6 @@ blueprint:
       name: Indoor Humidity Sensor (Optional)
       description: Humidity sensor or input number for enhanced comfort calculation
       default: ''
-      visibleWhen:
-        - condition: state
-          entity: humidity_comfort_enable
-          state: true
       selector:
         entity:
           domain:
@@ -186,10 +161,6 @@ blueprint:
       description: Humidity sensor, input number, or weather service for natural ventilation
         decisions
       default: ''
-      visibleWhen:
-        - condition: state
-          entity: humidity_comfort_enable
-          state: true
       selector:
         entity:
           domain:
@@ -207,10 +178,6 @@ blueprint:
       name: Natural Ventilation Threshold
       description: Temperature difference threshold for natural ventilation (°C)
       default: 2.0
-      visibleWhen:
-        - condition: state
-          entity: natural_ventilation_enable
-          state: true
       selector:
         number:
           min: 0.5
@@ -222,10 +189,6 @@ blueprint:
       name: Setback Temperature Offset
       description: Temperature offset when room is unoccupied (°C)
       default: 2.0
-      visibleWhen:
-        - condition: state
-          entity: energy_save_mode
-          state: true
       selector:
         number:
           min: 1.0
@@ -277,10 +240,6 @@ blueprint:
       name: Air Velocity (m/s)
       description: Typical air velocity in the space (affects cooling sensation)
       default: 0.1
-      visibleWhen:
-        - condition: state
-          entity: comfort_precision_mode
-          state: true
       selector:
         number:
           min: 0.0
