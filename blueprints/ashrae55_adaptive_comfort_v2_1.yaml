@@ -33,6 +33,12 @@ blueprint:
           multiple: false
           custom_value: false
           sort: false
+    area:
+      name: Area (Optional)
+      description: Select area to filter entities by location (leave empty to show all entities)
+      default: ""
+      selector:
+        area:    
     use_operative_temperature:
       name: Use Operative Temperature
       description: Enable operative temperature calculation (requires radiant temperature
@@ -57,6 +63,8 @@ blueprint:
       description: The climate device to control (SmartIR, generic thermostat, etc.)
       selector:
         entity:
+          filter:
+            - area: !input area
           domain:
           - climate
           multiple: false
@@ -66,6 +74,8 @@ blueprint:
         being controlled
       selector:
         entity:
+          filter:
+            - area: !input area 
           domain:
           - sensor
           - input_number
@@ -88,6 +98,8 @@ blueprint:
       default:
       selector:
         entity:
+          filter:
+            - area: !input area
           domain:
           - binary_sensor
           device_class:
@@ -136,6 +148,8 @@ blueprint:
       default: ''
       selector:
         entity:
+          filter:
+            - area: !input area
           domain:
           - sensor
           - input_number
@@ -152,6 +166,8 @@ blueprint:
       default: ''
       selector:
         entity:
+          filter:
+            - area: !input area
           domain:
           - sensor
           - input_number
