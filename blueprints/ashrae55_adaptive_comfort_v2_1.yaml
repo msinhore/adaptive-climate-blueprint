@@ -46,24 +46,6 @@ blueprint:
       default: true
       selector:
         boolean: {}
-    natural_ventilation_enable:
-      name: Natural Ventilation Detection
-      description: Automatically turn off HVAC when natural ventilation is sufficient
-      default: true
-      selector:
-        boolean: {}
-    adaptive_air_velocity:
-      name: Adaptive Air Velocity Control
-      description: Automatically adjust fan speed based on temperature deviation
-      default: true
-      selector:
-        boolean: {}
-    humidity_comfort_enable:
-      name: Humidity Comfort Correction
-      description: Apply humidity-based comfort corrections
-      default: true
-      selector:
-        boolean: {}
     comfort_precision_mode:
       name: Precision Comfort Mode
       description: Use high-precision calculations matching CBE tool accuracy
@@ -113,21 +95,86 @@ blueprint:
           - occupancy
           - presence
           multiple: false
+    use_occupancy_features:
+      name: Use Occupancy Features
+      description: Enable occupancy-based features (requires occupancy sensor)
+      default: false
+      selector:
+        boolean: {}
+    prolonged_absence_minutes:
+      name: Prolonged Absence Time
+      description: Minutes without presence to switch to maximum energy saving (Category III)
+      default: 60
+      visibleWhen:
+        - condition: state
+          entity: use_occupancy_features
+          state: true
+      selector:
+        number:
+          min: 10.0
+          max: 240.0
+          step: 5.0
+          unit_of_measurement: min
+          mode: slider
+    auto_shutdown_enable:
+      name: Auto Shutdown on Prolonged Absence
+      description: Automatically turn off HVAC when no presence is detected for extended period
+      default: false
+      visibleWhen:
+        - condition: state
+          entity: use_occupancy_features
+          state: true
+      selector:
+        boolean: {}
+    auto_shutdown_minutes:
+      name: Auto Shutdown Time
+      description: Minutes without presence to automatically turn off HVAC (requires Auto Shutdown enabled)
+      default: 120
+      visibleWhen:
+        - condition: and
+          conditions:
+            - condition: state
+              entity: use_occupancy_features
+              state: true
+            - condition: state
+              entity: auto_shutdown_enable
+              state: true
+      selector:
+        number:
+          min: 15.0
+          max: 480.0
+          step: 5.0
+          unit_of_measurement: min
+          mode: slider
     mean_radiant_temp_sensor:
       name: Mean Radiant Temperature Sensor (Optional)
       description: Temperature sensor or input number for mean radiant temperature
         measurement (near windows, heated surfaces)
       default: ''
+      visibleWhen:
+        - condition: state
+          entity: use_operative_temperature
+          state: true
       selector:
         entity:
           domain:
           - sensor
           - input_number
           multiple: false
+    humidity_comfort_enable:
+      name: Humidity Comfort Correction
+      description: Apply humidity-based comfort corrections
+      default: true
+      selector:
+        boolean: {}
     indoor_humidity_sensor:
       name: Indoor Humidity Sensor (Optional)
       description: Humidity sensor or input number for enhanced comfort calculation
       default: ''
+      visibleWhen:
+        - condition: state
+          entity: humidity_comfort_enable
+          state: true
       selector:
         entity:
           domain:
@@ -139,6 +186,10 @@ blueprint:
       description: Humidity sensor, input number, or weather service for natural ventilation
         decisions
       default: ''
+      visibleWhen:
+        - condition: state
+          entity: humidity_comfort_enable
+          state: true
       selector:
         entity:
           domain:
@@ -146,10 +197,20 @@ blueprint:
           - input_number
           - weather
           multiple: false
+    natural_ventilation_enable:
+      name: Natural Ventilation Detection
+      description: Automatically turn off HVAC when natural ventilation is sufficient
+      default: true
+      selector:
+        boolean: {}
     natural_ventilation_threshold:
       name: Natural Ventilation Threshold
       description: Temperature difference threshold for natural ventilation (°C)
       default: 2.0
+      visibleWhen:
+        - condition: state
+          entity: natural_ventilation_enable
+          state: true
       selector:
         number:
           min: 0.5
@@ -161,6 +222,10 @@ blueprint:
       name: Setback Temperature Offset
       description: Temperature offset when room is unoccupied (°C)
       default: 2.0
+      visibleWhen:
+        - condition: state
+          entity: energy_save_mode
+          state: true
       selector:
         number:
           min: 1.0
@@ -202,45 +267,26 @@ blueprint:
           step: 0.5
           unit_of_measurement: °C
           mode: slider
+    adaptive_air_velocity:
+      name: Adaptive Air Velocity Control
+      description: Automatically adjust fan speed based on temperature deviation
+      default: true
+      selector:
+        boolean: {}
     air_velocity:
       name: Air Velocity (m/s)
       description: Typical air velocity in the space (affects cooling sensation)
       default: 0.1
+      visibleWhen:
+        - condition: state
+          entity: comfort_precision_mode
+          state: true
       selector:
         number:
           min: 0.0
           max: 2.0
           step: 0.1
           unit_of_measurement: m/s
-          mode: slider
-    prolonged_absence_minutes:
-      name: Prolonged Absence Time
-      description: Minutes without presence to switch to maximum energy saving (Category
-        III)
-      default: 60
-      selector:
-        number:
-          min: 10.0
-          max: 240.0
-          step: 5.0
-          unit_of_measurement: min
-          mode: slider
-    auto_shutdown_enable:
-      name: Auto Shutdown on Prolonged Absence
-      description: Automatically turn off HVAC when no presence is detected for extended period
-      default: false
-      selector:
-        boolean: {}
-    auto_shutdown_minutes:
-      name: Auto Shutdown Time
-      description: Minutes without presence to automatically turn off HVAC (requires Auto Shutdown enabled)
-      default: 120
-      selector:
-        number:
-          min: 15.0
-          max: 480.0
-          step: 5.0
-          unit_of_measurement: min
           mode: slider
 variables:
   temperature_change_threshold_val: !input temperature_change_threshold
@@ -263,6 +309,7 @@ variables:
   adaptive_air_velocity_val: !input adaptive_air_velocity
   humidity_comfort_enable_val: !input humidity_comfort_enable
   comfort_precision_mode_val: !input comfort_precision_mode
+  use_occupancy_features_val: !input use_occupancy_features
   auto_shutdown_enable_val: !input auto_shutdown_enable
   auto_shutdown_minutes_val: !input auto_shutdown_minutes
   comfort_tolerance: "{% if comfort_category_val == \"I\" %}\n  2.0\n{% elif comfort_category_val
@@ -318,7 +365,7 @@ variables:
     | min | round(1) }}
 
     '
-  is_occupied: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" %}\n  {{
+  is_occupied: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" and use_occupancy_features_val %}\n  {{
     is_state(occupancy_sensor_id, 'on') }}\n{% else %}\n  true\n{% endif %}\n"
   natural_ventilation_available: "{% if natural_ventilation_enable_val %}\n  {% set
     temp_suitable = (outdoor_temp >= (indoor_temp - natural_ventilation_threshold_val))
@@ -368,12 +415,12 @@ variables:
     '
   fan_mode_needs_change: "{% if adaptive_air_velocity_val %}\n  {{ current_fan_mode
     != optimal_fan_speed }}\n{% else %}\n  false\n{% endif %}\n"
-  prolonged_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" %}\n
+  prolonged_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" and use_occupancy_features_val %}\n
     \ {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}\n
     \ {% set now = as_timestamp(now()) %}\n  {{ not is_state(occupancy_sensor_id,
     'on') and (now - last_seen) > ((prolonged_absence_minutes_val | default(60)) *
     60) }}\n{% else %}\n  false\n{% endif %}\n"
-  auto_shutdown_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" and auto_shutdown_enable_val %}\n
+  auto_shutdown_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" and use_occupancy_features_val and auto_shutdown_enable_val %}\n
     \ {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}\n
     \ {% set now = as_timestamp(now()) %}\n  {{ not is_state(occupancy_sensor_id,
     'on') and (now - last_seen) > (auto_shutdown_minutes_val * 60) }}\n{% else %}\n
