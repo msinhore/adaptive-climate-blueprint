@@ -1,138 +1,151 @@
 blueprint:
   name: ASHRAE 55 Adaptive Climate Control
-  description: >
-    Intelligent climate control implementing ASHRAE 55 adaptive comfort model with energy optimization.
-    
-    This blueprint dynamically adjusts comfort zones based on outdoor temperature, provides 15-30% energy savings,
-    and works seamlessly with SmartIR and other climate platforms.
-    
+  description: 'Intelligent climate control implementing ASHRAE 55 adaptive comfort
+    model with energy optimization.
+
+    This blueprint dynamically adjusts comfort zones based on outdoor temperature,
+    provides 15-30% energy savings, and works seamlessly with SmartIR and other climate
+    platforms.
+
+    '
   domain: automation
   author: Marco Sinhoreli
-  source_url: https://github.com/msinhore/adaptive-climate-blueprint
-  
+  source_url: https://github.com/msinhore/adaptive-climate-blueprint/blob/main/blueprints/ashrae55_adaptive_comfort_v2_1.yaml
   input:
     comfort_category:
       name: ASHRAE 55 Comfort Category
-      description: >
-        Comfort category based on ASHRAE 55 standard:
-        - Category I: ±2°C (90% satisfaction) - Office environments
-        - Category II: ±3°C (80% satisfaction) - Typical residential 
-        - Category III: ±4°C (65% satisfaction) - Maximum energy savings
-      default: "II"
+      description: 'Comfort category based on ASHRAE 55 standard: - Category I: ±2°C
+        (90% satisfaction) - Office environments - Category II: ±3°C (80% satisfaction)
+        - Typical residential  - Category III: ±4°C (65% satisfaction) - Maximum energy
+        savings
+
+        '
+      default: II
       selector:
         select:
           options:
-            - label: "Category I (±2°C - 90% satisfaction)"
-              value: "I"
-            - label: "Category II (±3°C - 80% satisfaction)"
-              value: "II"
-            - label: "Category III (±4°C - 65% satisfaction)"
-              value: "III"
-
-    # Boolean selectors
+          - label: Category I (±2°C - 90% satisfaction)
+            value: I
+          - label: Category II (±3°C - 80% satisfaction)
+            value: II
+          - label: Category III (±4°C - 65% satisfaction)
+            value: III
+          multiple: false
+          custom_value: false
+          sort: false
     use_operative_temperature:
       name: Use Operative Temperature
-      description: Enable operative temperature calculation (requires radiant temperature sensor)
+      description: Enable operative temperature calculation (requires radiant temperature
+        sensor)
       default: false
       selector:
-        boolean:
+        boolean: {}
     energy_save_mode:
       name: Energy Save Mode
       description: Enable enhanced energy saving features
       default: true
       selector:
-        boolean:
+        boolean: {}
     natural_ventilation_enable:
       name: Natural Ventilation Detection
       description: Automatically turn off HVAC when natural ventilation is sufficient
       default: true
       selector:
-        boolean:
+        boolean: {}
     adaptive_air_velocity:
       name: Adaptive Air Velocity Control
       description: Automatically adjust fan speed based on temperature deviation
       default: true
       selector:
-        boolean:
+        boolean: {}
     humidity_comfort_enable:
       name: Humidity Comfort Correction
       description: Apply humidity-based comfort corrections
       default: true
       selector:
-        boolean:
+        boolean: {}
     comfort_precision_mode:
       name: Precision Comfort Mode
       description: Use high-precision calculations matching CBE tool accuracy
       default: false
       selector:
-        boolean:
-
-    # Entity selectors
+        boolean: {}
     climate_entity:
       name: Climate Entity
       description: The climate device to control (SmartIR, generic thermostat, etc.)
       selector:
         entity:
-          domain: climate
+          domain:
+          - climate
+          multiple: false
     indoor_temp_sensor:
       name: Indoor Temperature Sensor
-      description: Temperature sensor, input number, or weather service for the room being controlled
+      description: Temperature sensor, input number, or weather service for the room
+        being controlled
       selector:
         entity:
-          domain: 
-            - sensor
-            - input_number
-            - weather
+          domain:
+          - sensor
+          - input_number
+          - weather
+          multiple: false
     outdoor_temp_sensor:
       name: Outdoor Temperature Sensor
-      description: Temperature sensor, input number, or weather service for adaptive comfort calculations
+      description: Temperature sensor, input number, or weather service for adaptive
+        comfort calculations
       selector:
         entity:
-          domain: 
-            - sensor
-            - input_number
-            - weather
+          domain:
+          - sensor
+          - input_number
+          - weather
+          multiple: false
     occupancy_sensor:
       name: Occupancy Sensor (Optional)
       description: Motion or presence sensor for occupancy-aware control
-      default: 
+      default:
       selector:
         entity:
-          domain: binary_sensor
-          device_class: 
-            - motion
-            - occupancy
-            - presence
+          domain:
+          - binary_sensor
+          device_class:
+          - motion
+          - occupancy
+          - presence
+          multiple: false
     mean_radiant_temp_sensor:
       name: Mean Radiant Temperature Sensor (Optional)
-      description: Temperature sensor or input number for mean radiant temperature measurement (near windows, heated surfaces)
-      default: ""
+      description: Temperature sensor or input number for mean radiant temperature
+        measurement (near windows, heated surfaces)
+      default: ''
       selector:
         entity:
-          domain: 
-            - sensor
-            - input_number
+          domain:
+          - sensor
+          - input_number
+          multiple: false
     indoor_humidity_sensor:
       name: Indoor Humidity Sensor (Optional)
       description: Humidity sensor or input number for enhanced comfort calculation
-      default: ""
+      default: ''
       selector:
         entity:
-          domain: 
-            - sensor
-            - input_number
+          domain:
+          - sensor
+          - input_number
+          multiple: false
     outdoor_humidity_sensor:
       name: Outdoor Humidity Sensor (Optional)
-      description: Humidity sensor, input number, or weather service for natural ventilation decisions
-      default: ""
+      description: Humidity sensor, input number, or weather service for natural ventilation
+        decisions
+      default: ''
       selector:
         entity:
-          domain: 
-            - sensor
-            - input_number
-            - weather
-
-    # Number selectors with unit_of_measurement: "°C"
+          domain:
+          - sensor
+          - input_number
+          - weather
+          multiple: false
     natural_ventilation_threshold:
       name: Natural Ventilation Threshold
       description: Temperature difference threshold for natural ventilation (°C)
@@ -142,7 +155,8 @@ blueprint:
           min: 0.5
           max: 5.0
           step: 0.5
-          unit_of_measurement: "°C"
+          unit_of_measurement: °C
+          mode: slider
     setback_temperature_offset:
       name: Setback Temperature Offset
       description: Temperature offset when room is unoccupied (°C)
@@ -152,7 +166,8 @@ blueprint:
           min: 1.0
           max: 5.0
           step: 0.5
-          unit_of_measurement: "°C"
+          unit_of_measurement: °C
+          mode: slider
     min_comfort_temp:
       name: Minimum Comfort Temperature
       description: Absolute minimum comfort temperature (°C)
@@ -162,7 +177,8 @@ blueprint:
           min: 15.0
           max: 22.0
           step: 0.5
-          unit_of_measurement: "°C"
+          unit_of_measurement: °C
+          mode: slider
     max_comfort_temp:
       name: Maximum Comfort Temperature
       description: Absolute maximum comfort temperature (°C)
@@ -172,19 +188,20 @@ blueprint:
           min: 25.0
           max: 32.0
           step: 0.5
-          unit_of_measurement: "°C"
+          unit_of_measurement: °C
+          mode: slider
     temperature_change_threshold:
       name: Temperature Change Threshold
-      description: Minimum temperature difference (°C) to trigger set_temperature command
+      description: Minimum temperature difference (°C) to trigger set_temperature
+        command
       default: 1.0
       selector:
         number:
           min: 0.5
           max: 2.0
           step: 0.5
-          unit_of_measurement: "°C"
-
-    # Number selectors with other units
+          unit_of_measurement: °C
+          mode: slider
     air_velocity:
       name: Air Velocity (m/s)
       description: Typical air velocity in the space (affects cooling sensation)
@@ -194,18 +211,37 @@ blueprint:
           min: 0.0
           max: 2.0
           step: 0.1
-          unit_of_measurement: "m/s"
+          unit_of_measurement: m/s
+          mode: slider
     prolonged_absence_minutes:
       name: Prolonged Absence Time
-      description: Minutes without presence to switch to maximum energy saving (Category III)
+      description: Minutes without presence to switch to maximum energy saving (Category
+        III)
       default: 60
       selector:
         number:
-          min: 10
-          max: 240
-          step: 5
-          unit_of_measurement: "min"
-
+          min: 10.0
+          max: 240.0
+          step: 5.0
+          unit_of_measurement: min
+          mode: slider
+    auto_shutdown_enable:
+      name: Auto Shutdown on Prolonged Absence
+      description: Automatically turn off HVAC when no presence is detected for extended period
+      default: false
+      selector:
+        boolean: {}
+    auto_shutdown_minutes:
+      name: Auto Shutdown Time
+      description: Minutes without presence to automatically turn off HVAC (requires Auto Shutdown enabled)
+      default: 120
+      selector:
+        number:
+          min: 15.0
+          max: 480.0
+          step: 5.0
+          unit_of_measurement: min
+          mode: slider
 variables:
   temperature_change_threshold_val: !input temperature_change_threshold
   climate_entity_id: !input climate_entity
@@ -227,524 +263,403 @@ variables:
   adaptive_air_velocity_val: !input adaptive_air_velocity
   humidity_comfort_enable_val: !input humidity_comfort_enable
   comfort_precision_mode_val: !input comfort_precision_mode
-  
-  comfort_tolerance: >
-    {% if comfort_category_val == "I" %}
-      2.0
-    {% elif comfort_category_val == "II" %}
-      3.0
-    {% else %}
-      4.0
-    {% endif %}
-  
-  outdoor_temp: >
-    {% if outdoor_sensor_id.startswith('weather.') %}
-      {{ state_attr(outdoor_sensor_id, 'temperature') | float(20) }}
-    {% else %}
-      {{ states(outdoor_sensor_id) | float(20) }}
-    {% endif %}
-  indoor_air_temp: >
-    {% if indoor_sensor_id.startswith('weather.') %}
-      {{ state_attr(indoor_sensor_id, 'temperature') | float(20) }}
-    {% else %}
-      {{ states(indoor_sensor_id) | float(20) }}
-    {% endif %}
-  
-  # Mean radiant temperature (optional)
-  mean_radiant_temp: >
-    {% if mean_radiant_sensor_id and mean_radiant_sensor_id != "" %}
-      {{ states(mean_radiant_sensor_id) | float(indoor_air_temp) }}
-    {% else %}
-      {{ indoor_air_temp }}
-    {% endif %}
-  
-  # Operative temperature calculation
-  operative_temp: >
-    {% if use_operative_temperature_val and mean_radiant_sensor_id and mean_radiant_sensor_id != "" %}
-      {{ ((indoor_air_temp + mean_radiant_temp) / 2) | round(1) }}
-    {% else %}
-      {{ indoor_air_temp }}
-    {% endif %}
-  
-  # Use operative temperature or air temperature
-  indoor_temp: "{{ operative_temp }}"
-  
-  # Humidity readings
-  indoor_humidity: >
-    {% if indoor_humidity_sensor_id and indoor_humidity_sensor_id != "" %}
-      {{ states(indoor_humidity_sensor_id) | float(50) }}
-    {% else %}
-      50
-    {% endif %}
-  
-  outdoor_humidity: >
-    {% if outdoor_humidity_sensor_id and outdoor_humidity_sensor_id != "" %}
-      {% if outdoor_humidity_sensor_id.startswith('weather.') %}
-        {{ state_attr(outdoor_humidity_sensor_id, 'humidity') | float(50) }}
-      {% else %}
-        {{ states(outdoor_humidity_sensor_id) | float(50) }}
-      {% endif %}
-    {% else %}
-      50
-    {% endif %}
-  
-  # Air velocity comfort correction (cooling effect) - Only above 25°C operative temp
-  air_velocity_offset: >
-    {% if operative_temp > 25 and air_velocity_val > 0.3 %}
-      {% if air_velocity_val >= 1.2 %}
-        -2.2
-      {% elif air_velocity_val >= 0.9 %}
-        -1.8
-      {% elif air_velocity_val >= 0.6 %}
-        -1.2
-      {% else %}
-        {{ -1.2 * ((air_velocity_val - 0.3) / 0.3) | round(1) }}
-      {% endif %}
-    {% else %}
-      0
-    {% endif %}
-  
-  # Humidity comfort correction
-  humidity_offset: >
-    {% if humidity_comfort_enable_val and indoor_humidity > 60 %}
-      {{ 0.3 * ((indoor_humidity - 60) / 10) | round(1) }}
-    {% elif humidity_comfort_enable_val and indoor_humidity < 30 %}
-      {{ -0.2 * ((30 - indoor_humidity) / 10) | round(1) }}
-    {% else %}
-      0
-    {% endif %}
-  
-  # Enhanced adaptive comfort temperature with corrections
-  base_adaptive_comfort_temp: >
-    {{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
-  
-  # ASHRAE 55 outdoor temperature validation (10-40°C range with extrapolation warning)
-  outdoor_temp_valid: >
-    {{ outdoor_temp >= 10 and outdoor_temp <= 40 }}
-  
-  adaptive_comfort_temp: >
-    {% if outdoor_temp_valid %}
-      {% if comfort_precision_mode_val %}
-        {% set raw_temp = base_adaptive_comfort_temp + air_velocity_offset + humidity_offset %}
-      {% else %}
-        {% set raw_temp = base_adaptive_comfort_temp %}
-      {% endif %}
-      {% if outdoor_temp > indoor_temp %}
-        {{ raw_temp | round(0, 'floor') | int }}
-      {% elif outdoor_temp < indoor_temp %}
-        {{ raw_temp | round(0, 'ceil') | int }}
-      {% else %}
-        {{ raw_temp | round(0) | int }}
-      {% endif %}
-    {% else %}
-      22
-    {% endif %}
-  
-  comfort_temp_min: >
-    {{ [adaptive_comfort_temp - comfort_tolerance, min_comfort_temp_val] | max | round(1) }}
-  
-  comfort_temp_max: >
-    {{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp_val] | min | round(1) }}
-  
-  is_occupied: >
-    {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
-      {{ is_state(occupancy_sensor_id, 'on') }}
-    {% else %}
-      true
-    {% endif %}
-  
-  # Enhanced natural ventilation with humidity consideration
-  natural_ventilation_available: >
-    {% if natural_ventilation_enable_val %}
-      {% set temp_suitable = (outdoor_temp >= (indoor_temp - natural_ventilation_threshold_val)) and 
-                             (outdoor_temp <= (indoor_temp + natural_ventilation_threshold_val)) and
-                             (outdoor_temp >= comfort_temp_min) and 
-                             (outdoor_temp <= comfort_temp_max) %}
-      {% set humidity_suitable = true %}
-      {% if outdoor_humidity_sensor_id and outdoor_humidity_sensor_id != "" %}
-        {% set humidity_suitable = (outdoor_humidity <= (indoor_humidity + 10)) %}
-      {% endif %}
-      {{ temp_suitable and humidity_suitable }}
-    {% else %}
-      false
-    {% endif %}
-  
-  # Adaptive fan speed calculation
-  optimal_fan_speed: >
-    {% if adaptive_air_velocity_val and indoor_temp > comfort_temp_max %}
-      {% set temp_deviation = indoor_temp - comfort_temp_max %}
-      {% if temp_deviation > 3 %}
-        high
-      {% elif temp_deviation > 1.5 %}
-        medium
-      {% elif temp_deviation > 0.5 %}
-        low
-      {% else %}
-        auto
-      {% endif %}
-    {% else %}
-      auto
-    {% endif %}
-  
-  target_temp: >
-    {% if not is_occupied and energy_save_mode_val %}
-      {% if indoor_temp > comfort_temp_max %}
-        {{ comfort_temp_max | round(1) }}
-      {% elif indoor_temp < comfort_temp_min %}
-        {{ max(comfort_temp_min - setback_temperature_offset_val, min_comfort_temp_val) | round(1) }}
-      {% else %}
-        {% set raw_temp = adaptive_comfort_temp %}
-        {% if outdoor_temp > indoor_temp %}
-          {{ raw_temp | round(0, 'floor') | int }}
-        {% elif outdoor_temp < indoor_temp %}
-          {{ raw_temp | round(0, 'ceil') | int }}
-        {% else %}
-          {{ raw_temp | round(0) | int }}
-        {% endif %}
-      {% endif %}
-    {% else %}
-      {% if indoor_temp < comfort_temp_min %}
-        {{ comfort_temp_min | round(1) }}
-      {% elif indoor_temp > comfort_temp_max %}
-        {{ comfort_temp_max | round(1) }}
-      {% else %}
-        {% set raw_temp = adaptive_comfort_temp %}
-        {% if outdoor_temp > indoor_temp %}
-          {{ raw_temp | round(0, 'floor') | int }}
-        {% elif outdoor_temp < indoor_temp %}
-          {{ raw_temp | round(0, 'ceil') | int }}
-        {% else %}
-          {{ raw_temp | round(0) | int }}
-        {% endif %}
-      {% endif %}
-    {% endif %}
-  
-  # Current climate state checks to avoid unnecessary commands
-  current_hvac_mode: >
-    {{ state_attr(climate_entity_id, 'hvac_mode') | string | lower }}
-  
-  current_temperature: >
-    {{ state_attr(climate_entity_id, 'temperature') | float(0) }}
-  
-  current_fan_mode: >
-    {{ state_attr(climate_entity_id, 'fan_mode') | string | lower }}
-  
-  # Check if commands would actually change anything
-  hvac_mode_needs_change: >
-    {% if indoor_temp < comfort_temp_min %}
-      {{ current_hvac_mode != 'heat' }}
-    {% elif indoor_temp > comfort_temp_max %}
-      {{ current_hvac_mode != 'cool' }}
-    {% else %}
-      false
-    {% endif %}
-  
-  temperature_needs_change: >
-    {{ (current_temperature - target_temp) | abs >= temperature_change_threshold_val }}
-  
-  fan_mode_needs_change: >
-    {% if adaptive_air_velocity_val %}
-      {{ current_fan_mode != optimal_fan_speed }}
-    {% else %}
-      false
-    {% endif %}
-  
-  prolonged_absence: >
-    {% if occupancy_sensor_id and occupancy_sensor_id != "" %}
-      {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}
-      {% set now = as_timestamp(now()) %}
-      {{ not is_state(occupancy_sensor_id, 'on') and (now - last_seen) > ((prolonged_absence_minutes_val | default(60)) * 60) }}
-    {% else %}
-      false
-    {% endif %}
-  
-  # ASHRAE 55 compliance notes
-  compliance_notes: >
-    {% set notes = [] %}
-    {% if outdoor_temp < 10 or outdoor_temp > 40 %}
-      {% set notes = notes + ["Outdoor temp outside valid range (10-40°C): " + outdoor_temp|string + "°C"] %}
-    {% elif outdoor_temp > 33.5 %}
-      {% set notes = notes + ["Outdoor temp above ASHRAE 55 standard range (10-33.5°C): " + outdoor_temp|string + "°C - using extrapolation"] %}
-    {% endif %}
-    {% if operative_temp <= 25 and air_velocity_val > 0.3 %}
-      {% set notes = notes + ["Air velocity cooling only applies above 25°C operative temp"] %}
-    {% endif %}
-    {% if notes|length > 0 %}
-      {{ notes | join("; ") }}
-    {% else %}
-      "Compliant"
-    {% endif %}
+  auto_shutdown_enable_val: !input auto_shutdown_enable
+  auto_shutdown_minutes_val: !input auto_shutdown_minutes
+  comfort_tolerance: "{% if comfort_category_val == \"I\" %}\n  2.0\n{% elif comfort_category_val
+    == \"II\" %}\n  3.0\n{% else %}\n  4.0\n{% endif %}\n"
+  outdoor_temp: "{% if outdoor_sensor_id.startswith('weather.') %}\n  {{ state_attr(outdoor_sensor_id,
+    'temperature') | float(20) }}\n{% else %}\n  {{ states(outdoor_sensor_id) | float(20)
+    }}\n{% endif %}\n"
+  indoor_air_temp: "{% if indoor_sensor_id.startswith('weather.') %}\n  {{ state_attr(indoor_sensor_id,
+    'temperature') | float(20) }}\n{% else %}\n  {{ states(indoor_sensor_id) | float(20)
+    }}\n{% endif %}\n"
+  mean_radiant_temp: "{% if mean_radiant_sensor_id and mean_radiant_sensor_id != \"\"
+    %}\n  {{ states(mean_radiant_sensor_id) | float(indoor_air_temp) }}\n{% else %}\n
+    \ {{ indoor_air_temp }}\n{% endif %}\n"
+  operative_temp: "{% if use_operative_temperature_val and mean_radiant_sensor_id
+    and mean_radiant_sensor_id != \"\" %}\n  {{ ((indoor_air_temp + mean_radiant_temp)
+    / 2) | round(1) }}\n{% else %}\n  {{ indoor_air_temp }}\n{% endif %}\n"
+  indoor_temp: '{{ operative_temp }}'
+  indoor_humidity: "{% if indoor_humidity_sensor_id and indoor_humidity_sensor_id
+    != \"\" %}\n  {{ states(indoor_humidity_sensor_id) | float(50) }}\n{% else %}\n
+    \ 50\n{% endif %}\n"
+  outdoor_humidity: "{% if outdoor_humidity_sensor_id and outdoor_humidity_sensor_id
+    != \"\" %}\n  {% if outdoor_humidity_sensor_id.startswith('weather.') %}\n    {{
+    state_attr(outdoor_humidity_sensor_id, 'humidity') | float(50) }}\n  {% else %}\n
+    \   {{ states(outdoor_humidity_sensor_id) | float(50) }}\n  {% endif %}\n{% else
+    %}\n  50\n{% endif %}\n"
+  air_velocity_offset: "{% if operative_temp > 25 and air_velocity_val > 0.3 %}\n
+    \ {% if air_velocity_val >= 1.2 %}\n    -2.2\n  {% elif air_velocity_val >= 0.9
+    %}\n    -1.8\n  {% elif air_velocity_val >= 0.6 %}\n    -1.2\n  {% else %}\n    {{
+    -1.2 * ((air_velocity_val - 0.3) / 0.3) | round(1) }}\n  {% endif %}\n{% else
+    %}\n  0\n{% endif %}\n"
+  humidity_offset: "{% if humidity_comfort_enable_val and indoor_humidity > 60 %}\n
+    \ {{ 0.3 * ((indoor_humidity - 60) / 10) | round(1) }}\n{% elif humidity_comfort_enable_val
+    and indoor_humidity < 30 %}\n  {{ -0.2 * ((30 - indoor_humidity) / 10) | round(1)
+    }}\n{% else %}\n  0\n{% endif %}\n"
+  base_adaptive_comfort_temp: '{{ (18.9 + 0.255 * outdoor_temp) | round(1) }}
 
+    '
+  outdoor_temp_valid: '{{ outdoor_temp >= 10 and outdoor_temp <= 40 }}
+
+    '
+  adaptive_comfort_temp: "{% if outdoor_temp_valid %}\n  {% if comfort_precision_mode_val
+    %}\n    {% set raw_temp = base_adaptive_comfort_temp + air_velocity_offset + humidity_offset
+    %}\n  {% else %}\n    {% set raw_temp = base_adaptive_comfort_temp %}\n  {% endif
+    %}\n  {% if outdoor_temp > indoor_temp %}\n    {{ raw_temp | round(0, 'floor')
+    | int }}\n  {% elif outdoor_temp < indoor_temp %}\n    {{ raw_temp | round(0,
+    'ceil') | int }}\n  {% else %}\n    {{ raw_temp | round(0) | int }}\n  {% endif
+    %}\n{% else %}\n  22\n{% endif %}\n"
+  comfort_temp_min: '{{ [adaptive_comfort_temp - comfort_tolerance, min_comfort_temp_val]
+    | max | round(1) }}
+
+    '
+  comfort_temp_max: '{{ [adaptive_comfort_temp + comfort_tolerance, max_comfort_temp_val]
+    | min | round(1) }}
+
+    '
+  is_occupied: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" %}\n  {{
+    is_state(occupancy_sensor_id, 'on') }}\n{% else %}\n  true\n{% endif %}\n"
+  natural_ventilation_available: "{% if natural_ventilation_enable_val %}\n  {% set
+    temp_suitable = (outdoor_temp >= (indoor_temp - natural_ventilation_threshold_val))
+    and \n                         (outdoor_temp <= (indoor_temp + natural_ventilation_threshold_val))
+    and\n                         (outdoor_temp >= comfort_temp_min) and \n                         (outdoor_temp
+    <= comfort_temp_max) %}\n  {% set humidity_suitable = true %}\n  {% if outdoor_humidity_sensor_id
+    and outdoor_humidity_sensor_id != \"\" %}\n    {% set humidity_suitable = (outdoor_humidity
+    <= (indoor_humidity + 10)) %}\n  {% endif %}\n  {{ temp_suitable and humidity_suitable
+    }}\n{% else %}\n  false\n{% endif %}\n"
+  optimal_fan_speed: "{% if adaptive_air_velocity_val and indoor_temp > comfort_temp_max
+    %}\n  {% set temp_deviation = indoor_temp - comfort_temp_max %}\n  {% if temp_deviation
+    > 3 %}\n    high\n  {% elif temp_deviation > 1.5 %}\n    medium\n  {% elif temp_deviation
+    > 0.5 %}\n    low\n  {% else %}\n    auto\n  {% endif %}\n{% else %}\n  auto\n{%
+    endif %}\n"
+  target_temp: "{% if not is_occupied and energy_save_mode_val %}\n  {% if indoor_temp
+    > comfort_temp_max %}\n    {{ comfort_temp_max | round(1) }}\n  {% elif indoor_temp
+    < comfort_temp_min %}\n    {{ max(comfort_temp_min - setback_temperature_offset_val,
+    min_comfort_temp_val) | round(1) }}\n  {% else %}\n    {% set raw_temp = adaptive_comfort_temp
+    %}\n    {% if outdoor_temp > indoor_temp %}\n      {{ raw_temp | round(0, 'floor')
+    | int }}\n    {% elif outdoor_temp < indoor_temp %}\n      {{ raw_temp | round(0,
+    'ceil') | int }}\n    {% else %}\n      {{ raw_temp | round(0) | int }}\n    {%
+    endif %}\n  {% endif %}\n{% else %}\n  {% if indoor_temp < comfort_temp_min %}\n
+    \   {{ comfort_temp_min | round(1) }}\n  {% elif indoor_temp > comfort_temp_max
+    %}\n    {{ comfort_temp_max | round(1) }}\n  {% else %}\n    {% set raw_temp =
+    adaptive_comfort_temp %}\n    {% if outdoor_temp > indoor_temp %}\n      {{ raw_temp
+    | round(0, 'floor') | int }}\n    {% elif outdoor_temp < indoor_temp %}\n      {{
+    raw_temp | round(0, 'ceil') | int }}\n    {% else %}\n      {{ raw_temp | round(0)
+    | int }}\n    {% endif %}\n  {% endif %}\n{% endif %}\n"
+  current_hvac_mode: '{{ state_attr(climate_entity_id, ''hvac_mode'') | string | lower
+    }}
+
+    '
+  current_temperature: '{{ state_attr(climate_entity_id, ''temperature'') | float(0)
+    }}
+
+    '
+  current_fan_mode: '{{ state_attr(climate_entity_id, ''fan_mode'') | string | lower
+    }}
+
+    '
+  hvac_mode_needs_change: "{% if indoor_temp < comfort_temp_min %}\n  {{ current_hvac_mode
+    != 'heat' }}\n{% elif indoor_temp > comfort_temp_max %}\n  {{ current_hvac_mode
+    != 'cool' }}\n{% else %}\n  false\n{% endif %}\n"
+  temperature_needs_change: '{{ (current_temperature - target_temp) | abs >= temperature_change_threshold_val
+    }}
+
+    '
+  fan_mode_needs_change: "{% if adaptive_air_velocity_val %}\n  {{ current_fan_mode
+    != optimal_fan_speed }}\n{% else %}\n  false\n{% endif %}\n"
+  prolonged_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" %}\n
+    \ {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}\n
+    \ {% set now = as_timestamp(now()) %}\n  {{ not is_state(occupancy_sensor_id,
+    'on') and (now - last_seen) > ((prolonged_absence_minutes_val | default(60)) *
+    60) }}\n{% else %}\n  false\n{% endif %}\n"
+  auto_shutdown_absence: "{% if occupancy_sensor_id and occupancy_sensor_id != \"\" and auto_shutdown_enable_val %}\n
+    \ {% set last_seen = as_timestamp(states[occupancy_sensor_id].last_changed) %}\n
+    \ {% set now = as_timestamp(now()) %}\n  {{ not is_state(occupancy_sensor_id,
+    'on') and (now - last_seen) > (auto_shutdown_minutes_val * 60) }}\n{% else %}\n
+    \ false\n{% endif %}\n"
+  compliance_notes: "{% set notes = [] %} {% if outdoor_temp < 10 or outdoor_temp
+    > 40 %}\n  {% set notes = notes + [\"Outdoor temp outside valid range (10-40°C):
+    \" + outdoor_temp|string + \"°C\"] %}\n{% elif outdoor_temp > 33.5 %}\n  {% set
+    notes = notes + [\"Outdoor temp above ASHRAE 55 standard range (10-33.5°C): \"
+    + outdoor_temp|string + \"°C - using extrapolation\"] %}\n{% endif %} {% if operative_temp
+    <= 25 and air_velocity_val > 0.3 %}\n  {% set notes = notes + [\"Air velocity
+    cooling only applies above 25°C operative temp\"] %}\n{% endif %} {% if notes|length
+    > 0 %}\n  {{ notes | join(\"; \") }}\n{% else %}\n  \"Compliant\"\n{% endif %}\n"
 trigger:
-  - platform: time_pattern
-    minutes: 0
-  - platform: time_pattern
-    minutes: 10
-  - platform: time_pattern
-    minutes: 20
-  - platform: time_pattern
-    minutes: 30
-  - platform: time_pattern
-    minutes: 40
-  - platform: time_pattern
-    minutes: 50
-  
-  - platform: state
-    entity_id: !input indoor_temp_sensor
-  
-  - platform: state
-    entity_id: !input outdoor_temp_sensor
-
+- platform: time_pattern
+  minutes: 0
+- platform: time_pattern
+  minutes: 10
+- platform: time_pattern
+  minutes: 20
+- platform: time_pattern
+  minutes: 30
+- platform: time_pattern
+  minutes: 40
+- platform: time_pattern
+  minutes: 50
+- platform: state
+  entity_id: !input indoor_temp_sensor
+- platform: state
+  entity_id: !input outdoor_temp_sensor
 condition:
-  - condition: template
-    value_template: >
-      {{ states(climate_entity_id) != 'off' }}
-  - condition: template
-    value_template: >
-      {{ states(climate_entity_id) not in ['unavailable', 'unknown'] and
-         states(indoor_sensor_id) not in ['unavailable', 'unknown'] and
-         states(outdoor_sensor_id) not in ['unavailable', 'unknown'] }}
+- condition: template
+  value_template: '{{ states(climate_entity_id) != ''off'' }}
 
+    '
+- condition: template
+  value_template: "{{ states(climate_entity_id) not in ['unavailable', 'unknown']
+    and\n   states(indoor_sensor_id) not in ['unavailable', 'unknown'] and\n   states(outdoor_sensor_id)
+    not in ['unavailable', 'unknown'] }}\n"
 action:
-  - choose:
-      # Natural ventilation mode - turn off HVAC
-      - conditions:
-          - condition: template
-            value_template: "{{ natural_ventilation_available and is_occupied }}"
-        sequence:
-          - service: climate.turn_off
-            target:
-              entity_id: !input climate_entity
-          - service: logbook.log
-            data:
-              name: "ASHRAE 55 Adaptive Climate {{ this.name}}"
-              message: >
-                Natural ventilation active. HVAC turned off.
-                Outdoor: {{ outdoor_temp }}°C, Indoor: {{ indoor_temp }}°C,
-                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C
-      
-      # Normal climate control
-      - conditions:
-          - condition: template
-            value_template: "{{ not natural_ventilation_available }}"
-        sequence:
-          - choose:
-              # Heating needed - indoor temp below comfort zone
-              - conditions:
-                  - condition: template
-                    value_template: "{{ indoor_temp < comfort_temp_min }}"
-                sequence:
-                  # Always set heating mode when indoor temp is below comfort zone
-                  - service: climate.set_hvac_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      hvac_mode: heat
-                  # Set temperature if needed
-                  - condition: template
-                    value_template: "{{ temperature_needs_change }}"
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      temperature: "{{ target_temp }}"
-                  # Set fan speed for heating only if needed
-                  - condition: template
-                    value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                  - service: climate.set_fan_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      fan_mode: "low"
-              
-              # Cooling needed - indoor temp above comfort zone
-              - conditions:
-                  - condition: template
-                    value_template: "{{ indoor_temp > comfort_temp_max }}"
-                sequence:
-                  # Always set cooling mode when indoor temp is above comfort zone
-                  - service: climate.set_hvac_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      hvac_mode: cool
-                  # Set temperature if needed
-                  - condition: template
-                    value_template: "{{ temperature_needs_change }}"
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      temperature: "{{ target_temp }}"
-                  # Set adaptive fan speed for cooling only if needed
-                  - condition: template
-                    value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                  - service: climate.set_fan_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      fan_mode: "{{ optimal_fan_speed }}"
-              
-              # Within comfort zone - ASHRAE 55 compliant intelligent mode selection
-              - conditions:
-                  - condition: template
-                    value_template: >
-                      {{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max }}
-                sequence:
-                  - choose:
-                      # ASHRAE 55 natural ventilation opportunity: outdoor > comfort_min > indoor
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {{ outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp }}
-                        sequence:
-                          - condition: template
-                            value_template: >
-                              {{ current_hvac_mode != 'fan_only' }}
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "medium"
-                      
-                      # ASHRAE 55 natural ventilation opportunity: outdoor < comfort_max < indoor
-                      - conditions:
-                          - condition: template
-                            value_template: >
-                              {{ outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp }}
-                        sequence:
-                          - condition: template
-                            value_template: >
-                              {{ current_hvac_mode != 'fan_only' }}
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: fan_only
-                          - service: climate.set_fan_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              fan_mode: "low"
-                      
-                      # Within comfort zone but outdoor significantly warmer - minimal cooling
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ (outdoor_temp - indoor_temp) > 3 }}"
-                        sequence:
-                          - condition: template
-                            value_template: >
-                              {{ current_hvac_mode != 'cool' }}
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: cool
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                      
-                      # Within comfort zone but outdoor significantly cooler - minimal heating
-                      - conditions:
-                          - condition: template
-                            value_template: "{{ (indoor_temp - outdoor_temp) > 3 }}"
-                        sequence:
-                          - condition: template
-                            value_template: >
-                              {{ current_hvac_mode != 'heat' }}
-                          - service: climate.set_hvac_mode
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              hvac_mode: heat
-                          - condition: template
-                            value_template: "{{ temperature_needs_change }}"
-                          - service: climate.set_temperature
-                            target:
-                              entity_id: !input climate_entity
-                            data:
-                              temperature: "{{ target_temp }}"
-                      
-                      # Default: within comfort zone, apply efficient mode (no auto)
-                      - conditions: []
-                        sequence:
-                          - choose:
-                              # Dentro da zona de conforto: temp_ext > temp_int → cool
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ outdoor_temp > indoor_temp }}"
-                                sequence:
-                                  - condition: template
-                                    value_template: "{{ current_hvac_mode != 'cool' }}"
-                                  - service: climate.set_hvac_mode
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      hvac_mode: cool
-                                  - condition: template
-                                    value_template: "{{ temperature_needs_change }}"
-                                  - service: climate.set_temperature
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      temperature: "{{ adaptive_comfort_temp }}"
-                              # Dentro da zona de conforto: temp_ext < temp_int → heat
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ outdoor_temp < indoor_temp }}"
-                                sequence:
-                                  - condition: template
-                                    value_template: "{{ current_hvac_mode != 'heat' }}"
-                                  - service: climate.set_hvac_mode
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      hvac_mode: heat
-                                  - condition: template
-                                    value_template: "{{ temperature_needs_change }}"
-                                  - service: climate.set_temperature
-                                    target:
-                                      entity_id: !input climate_entity
-                                    data:
-                                      temperature: "{{ adaptive_comfort_temp }}"
-                              # Dentro da zona de conforto: temp_ext == temp_int → não faz nada
-                              - conditions:
-                                  - condition: template
-                                    value_template: "{{ outdoor_temp == indoor_temp }}"
-                                sequence: []
-                  
-                  # Set optimal fan speed only if needed for comfort zone scenarios
-                  - condition: template
-                    value_template: "{{ adaptive_air_velocity_val and fan_mode_needs_change }}"
-                  - service: climate.set_fan_mode
-                    target:
-                      entity_id: !input climate_entity
-                    data:
-                      fan_mode: "auto"
-          
-          - service: logbook.log
-            data:
-              name: "ASHRAE 55 Adaptive Climate {{ this.name }}"
-              message: >
-                ASHRAE 55 compliant climate control applied. 
-                Target: {{ target_temp }}°C (Current: {{ current_temperature }}°C),
-                Indoor: {{ indoor_temp }}°C, Outdoor: {{ outdoor_temp }}°C,
-                Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max }}°C (adaptive temp: {{ adaptive_comfort_temp }}°C),
-                HVAC Mode: {% if indoor_temp < comfort_temp_min %}HEAT (below comfort zone){% elif indoor_temp > comfort_temp_max %}COOL (above comfort zone){% elif outdoor_temp > comfort_temp_min and comfort_temp_min > indoor_temp %}FAN (natural ventilation opportunity){% elif outdoor_temp < comfort_temp_max and comfort_temp_max < indoor_temp %}FAN (natural ventilation opportunity){% elif (outdoor_temp - indoor_temp) > 3 %}COOL (outdoor >>3°C warmer){% elif (indoor_temp - outdoor_temp) > 3 %}HEAT (outdoor >>3°C cooler){% else %}AUTO (within comfort zone){% endif %} (was {{ current_hvac_mode }}),
-                Occupancy: {{ 'Occupied' if is_occupied else 'Unoccupied' }},
-                Category: {{ comfort_category_val }} (±{{ comfort_tolerance }}°C),
-                {% if comfort_precision_mode_val %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{ humidity_offset }}°C,{% endif %}
-                {% if adaptive_air_velocity_val %}Fan: {{ current_fan_mode }}{% if fan_mode_needs_change %} → {{ optimal_fan_speed }}{% endif %},{% endif %}
-                Compliance: {{ compliance_notes }}
+- choose:
+  # Auto shutdown due to prolonged absence - MUST COME FIRST
+  - conditions:
+    - condition: template
+      value_template: '{{ auto_shutdown_absence }}'
+    - condition: template
+      value_template: '{{ states(climate_entity_id) != ''off'' }}'
+    sequence:
+    - service: climate.turn_off
+      target:
+        entity_id: !input climate_entity
+    - service: logbook.log
+      data:
+        name: ASHRAE 55 Adaptive Climate {{ this.name}}
+        message: 'Auto shutdown activated due to prolonged absence ({{ auto_shutdown_minutes_val }} min).
+          HVAC turned off for energy saving.
+          Last presence: {{ states[occupancy_sensor_id].last_changed | as_timestamp | timestamp_custom(''%H:%M:%S'') }}'
+  - conditions:
+    - condition: template
+      value_template: '{{ natural_ventilation_available and is_occupied }}'
+    sequence:
+    - service: climate.turn_off
+      target:
+        entity_id: !input climate_entity
+    - service: logbook.log
+      data:
+        name: ASHRAE 55 Adaptive Climate {{ this.name}}
+        message: 'Natural ventilation active. HVAC turned off. Outdoor: {{ outdoor_temp
+          }}°C, Indoor: {{ indoor_temp }}°C, Comfort zone: {{ comfort_temp_min }}-{{
+          comfort_temp_max }}°C
 
+          '
+  - conditions:
+    - condition: template
+      value_template: '{{ not natural_ventilation_available and not auto_shutdown_absence }}'
+    sequence:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '{{ indoor_temp < comfort_temp_min }}'
+        sequence:
+        - service: climate.set_hvac_mode
+          target:
+            entity_id: !input climate_entity
+          data:
+            hvac_mode: heat
+        - condition: template
+          value_template: '{{ temperature_needs_change }}'
+        - service: climate.set_temperature
+          target:
+            entity_id: !input climate_entity
+          data:
+            temperature: '{{ target_temp }}'
+        - condition: template
+          value_template: '{{ adaptive_air_velocity_val and fan_mode_needs_change
+            }}'
+        - service: climate.set_fan_mode
+          target:
+            entity_id: !input climate_entity
+          data:
+            fan_mode: low
+      - conditions:
+        - condition: template
+          value_template: '{{ indoor_temp > comfort_temp_max }}'
+        sequence:
+        - service: climate.set_hvac_mode
+          target:
+            entity_id: !input climate_entity
+          data:
+            hvac_mode: cool
+        - condition: template
+          value_template: '{{ temperature_needs_change }}'
+        - service: climate.set_temperature
+          target:
+            entity_id: !input climate_entity
+          data:
+            temperature: '{{ target_temp }}'
+        - condition: template
+          value_template: '{{ adaptive_air_velocity_val and fan_mode_needs_change
+            }}'
+        - service: climate.set_fan_mode
+          target:
+            entity_id: !input climate_entity
+          data:
+            fan_mode: '{{ optimal_fan_speed }}'
+      - conditions:
+        - condition: template
+          value_template: '{{ indoor_temp >= comfort_temp_min and indoor_temp <= comfort_temp_max
+            }}
+
+            '
+        sequence:
+        - choose:
+          - conditions:
+            - condition: template
+              value_template: '{{ outdoor_temp > comfort_temp_min and comfort_temp_min
+                > indoor_temp }}
+
+                '
+            sequence:
+            - condition: template
+              value_template: '{{ current_hvac_mode != ''fan_only'' }}
+
+                '
+            - service: climate.set_hvac_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                hvac_mode: fan_only
+            - service: climate.set_fan_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                fan_mode: medium
+          - conditions:
+            - condition: template
+              value_template: '{{ outdoor_temp < comfort_temp_max and comfort_temp_max
+                < indoor_temp }}
+
+                '
+            sequence:
+            - condition: template
+              value_template: '{{ current_hvac_mode != ''fan_only'' }}
+
+                '
+            - service: climate.set_hvac_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                hvac_mode: fan_only
+            - service: climate.set_fan_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                fan_mode: low
+          - conditions:
+            - condition: template
+              value_template: '{{ (outdoor_temp - indoor_temp) > 3 }}'
+            sequence:
+            - condition: template
+              value_template: '{{ current_hvac_mode != ''cool'' }}
+
+                '
+            - service: climate.set_hvac_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                hvac_mode: cool
+            - condition: template
+              value_template: '{{ temperature_needs_change }}'
+            - service: climate.set_temperature
+              target:
+                entity_id: !input climate_entity
+              data:
+                temperature: '{{ target_temp }}'
+          - conditions:
+            - condition: template
+              value_template: '{{ (indoor_temp - outdoor_temp) > 3 }}'
+            sequence:
+            - condition: template
+              value_template: '{{ current_hvac_mode != ''heat'' }}
+
+                '
+            - service: climate.set_hvac_mode
+              target:
+                entity_id: !input climate_entity
+              data:
+                hvac_mode: heat
+            - condition: template
+              value_template: '{{ temperature_needs_change }}'
+            - service: climate.set_temperature
+              target:
+                entity_id: !input climate_entity
+              data:
+                temperature: '{{ target_temp }}'
+          - conditions: []
+            sequence:
+            - choose:
+              - conditions:
+                - condition: template
+                  value_template: '{{ outdoor_temp > indoor_temp }}'
+                sequence:
+                - condition: template
+                  value_template: '{{ current_hvac_mode != ''cool'' }}'
+                - service: climate.set_hvac_mode
+                  target:
+                    entity_id: !input climate_entity
+                  data:
+                    hvac_mode: cool
+                - condition: template
+                  value_template: '{{ temperature_needs_change }}'
+                - service: climate.set_temperature
+                  target:
+                    entity_id: !input climate_entity
+                  data:
+                    temperature: '{{ adaptive_comfort_temp }}'
+              - conditions:
+                - condition: template
+                  value_template: '{{ outdoor_temp < indoor_temp }}'
+                sequence:
+                - condition: template
+                  value_template: '{{ current_hvac_mode != ''heat'' }}'
+                - service: climate.set_hvac_mode
+                  target:
+                    entity_id: !input climate_entity
+                  data:
+                    hvac_mode: heat
+                - condition: template
+                  value_template: '{{ temperature_needs_change }}'
+                - service: climate.set_temperature
+                  target:
+                    entity_id: !input climate_entity
+                  data:
+                    temperature: '{{ adaptive_comfort_temp }}'
+              - conditions:
+                - condition: template
+                  value_template: '{{ outdoor_temp == indoor_temp }}'
+                sequence: []
+        - condition: template
+          value_template: '{{ adaptive_air_velocity_val and fan_mode_needs_change
+            }}'
+        - service: climate.set_fan_mode
+          target:
+            entity_id: !input climate_entity
+          data:
+            fan_mode: auto
+    - service: logbook.log
+      data:
+        name: ASHRAE 55 Adaptive Climate {{ this.name }}
+        message: 'ASHRAE 55 compliant climate control applied.  Target: {{ target_temp
+          }}°C (Current: {{ current_temperature }}°C), Indoor: {{ indoor_temp }}°C,
+          Outdoor: {{ outdoor_temp }}°C, Comfort zone: {{ comfort_temp_min }}-{{ comfort_temp_max
+          }}°C (adaptive temp: {{ adaptive_comfort_temp }}°C), HVAC Mode: {% if indoor_temp
+          < comfort_temp_min %}HEAT (below comfort zone){% elif indoor_temp > comfort_temp_max
+          %}COOL (above comfort zone){% elif outdoor_temp > comfort_temp_min and comfort_temp_min
+          > indoor_temp %}FAN (natural ventilation opportunity){% elif outdoor_temp
+          < comfort_temp_max and comfort_temp_max < indoor_temp %}FAN (natural ventilation
+          opportunity){% elif (outdoor_temp - indoor_temp) > 3 %}COOL (outdoor >>3°C
+          warmer){% elif (indoor_temp - outdoor_temp) > 3 %}HEAT (outdoor >>3°C cooler){%
+          else %}AUTO (within comfort zone){% endif %} (was {{ current_hvac_mode }}),
+          Occupancy: {{ ''Occupied'' if is_occupied else ''Unoccupied'' }}, Category:
+          {{ comfort_category_val }} (±{{ comfort_tolerance }}°C), {% if comfort_precision_mode_val
+          %}Air velocity offset: {{ air_velocity_offset }}°C, Humidity offset: {{
+          humidity_offset }}°C,{% endif %} {% if adaptive_air_velocity_val %}Fan:
+          {{ current_fan_mode }}{% if fan_mode_needs_change %} → {{ optimal_fan_speed
+          }}{% endif %},{% endif %} Compliance: {{ compliance_notes }}
+
+          '
 mode: single
 max_exceeded: silent
